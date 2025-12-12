@@ -1,5 +1,14 @@
 # CODEC Version History
 
+## v0.2.0 - UI Redesign & Features (2025-12-12)
+- **UI Redesign**: Authentic Metal Gear 2 Codec interface
+  - Dual-portrait layout
+  - Simplified frequency display
+  - "Config" modal for independent Character and LLM selection
+- **Character Portraits**: Added custom 8-bit MSX2 pixel art for Snake, Colonel, and Otacon
+- **Providers**: Added Google Gemini Pro support
+- **Experience**: Enhanced CRT effects and green monochrome filters
+
 ## v0.1.0 - Initial Setup (2024-12-12)
 - Next.js 14 project structure with TypeScript
 - Dev Container configuration for Node.js 20
