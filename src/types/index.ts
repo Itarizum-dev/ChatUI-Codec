@@ -1,19 +1,19 @@
-// LLM Provider Configuration
+// LLM Provider Configuration (separate from persona)
 export interface LLMProvider {
     id: string;
     name: string;
-    frequency: string;
     endpoint: string;
-    type: 'ollama' | 'anthropic' | 'openai' | 'custom';
-    model?: string;
-    persona?: Persona;
+    type: 'ollama' | 'anthropic' | 'openai' | 'google' | 'custom';
+    model: string;
+    apiKeyEnv?: string; // environment variable name for API key
 }
 
-// Character Persona
+// Character Persona (separate from LLM)
 export interface Persona {
     id: string;
     name: string;
     codename: string;
+    frequency: string;
     systemPrompt: string;
     portraitUrl?: string;
 }
@@ -25,6 +25,7 @@ export interface Message {
     content: string;
     timestamp: Date;
     providerId?: string;
+    personaId?: string;
     metadata?: MessageMetadata;
 }
 
@@ -44,6 +45,7 @@ export interface ChatState {
     messages: Message[];
     isLoading: boolean;
     currentProvider: LLMProvider | null;
+    currentPersona: Persona | null;
     error: string | null;
 }
 
@@ -51,6 +53,7 @@ export interface ChatState {
 export interface ChatRequest {
     message: string;
     providerId: string;
+    personaId?: string;
     context?: Message[];
     systemPrompt?: string;
 }

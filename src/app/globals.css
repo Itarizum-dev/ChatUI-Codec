@@ -1,27 +1,30 @@
 /* ===================================
    CODEC - Global Styles
-   Metal Gear 2 Codec Theme
+   Metal Gear 2 Authentic Codec Theme
    =================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
 :root {
-  /* MGS2 Codec Color Palette */
+  /* MG2 Codec Color Palette - Authentic Green CRT */
   --codec-green-bright: #00ff41;
   --codec-green-mid: #00cc33;
-  --codec-green-dark: #009922;
-  --codec-green-dim: #004411;
-  --codec-bg-dark: #0a0f0a;
-  --codec-bg-panel: #0d120d;
-  --codec-border: #1a2f1a;
-  --codec-text-glow: rgba(0, 255, 65, 0.6);
+  --codec-green-dark: #008822;
+  --codec-green-dim: #003311;
+  --codec-green-glow: #00ff4180;
+  --codec-bg-dark: #000800;
+  --codec-bg-panel: #001208;
+  --codec-border: #00aa33;
+  --codec-text-glow: rgba(0, 255, 65, 0.8);
   
   /* Typography */
   --font-mono: 'Share Tech Mono', 'Courier New', monospace;
   --font-display: 'Orbitron', 'Share Tech Mono', monospace;
   
   /* Sizing */
-  --codec-border-width: 2px;
-  --codec-glow-blur: 8px;
-  --scanline-opacity: 0.08;
+  --codec-border-width: 3px;
+  --codec-glow-blur: 12px;
+  --scanline-opacity: 0.15;
 }
 
 * {
@@ -45,10 +48,10 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: var(--codec-bg-dark);
+  background: radial-gradient(ellipse at center, #001a0a 0%, #000800 50%, #000 100%);
 }
 
-/* Scanline Overlay */
+/* Strong Scanline Overlay - MG2 Authentic */
 .crt-screen::before {
   content: '';
   position: absolute;
@@ -58,24 +61,33 @@ body {
   bottom: 0;
   background: repeating-linear-gradient(
     0deg,
-    transparent,
+    transparent 0px,
     transparent 2px,
-    rgba(0, 0, 0, 0.3) 2px,
-    rgba(0, 0, 0, 0.3) 4px
+    rgba(0, 0, 0, 0.4) 2px,
+    rgba(0, 0, 0, 0.4) 4px
   );
   pointer-events: none;
   z-index: 1000;
-  opacity: var(--scanline-opacity);
 }
 
-/* CRT Flicker Animation */
+/* CRT Phosphor Glow and Flicker */
 @keyframes crt-flicker {
-  0% { opacity: 0.97; }
+  0% { opacity: 0.98; }
   5% { opacity: 0.95; }
-  10% { opacity: 0.98; }
+  10% { opacity: 0.99; }
   15% { opacity: 0.96; }
-  20% { opacity: 0.99; }
+  20% { opacity: 1; }
+  50% { opacity: 0.98; }
   100% { opacity: 1; }
+}
+
+@keyframes phosphor-pulse {
+  0%, 100% { 
+    filter: brightness(1) drop-shadow(0 0 2px var(--codec-green-glow));
+  }
+  50% { 
+    filter: brightness(1.05) drop-shadow(0 0 4px var(--codec-green-glow));
+  }
 }
 
 .crt-screen::after {
@@ -88,34 +100,65 @@ body {
   background: radial-gradient(
     ellipse at center,
     transparent 0%,
-    rgba(0, 0, 0, 0.2) 80%,
-    rgba(0, 0, 0, 0.5) 100%
+    transparent 60%,
+    rgba(0, 0, 0, 0.3) 100%
   );
   pointer-events: none;
   z-index: 999;
-  animation: crt-flicker 0.15s infinite;
+  animation: crt-flicker 0.1s infinite;
 }
 
-/* Text Glow Effect */
+/* Text Glow Effect - Strong Phosphor */
 .glow-text {
   text-shadow: 
-    0 0 4px var(--codec-text-glow),
-    0 0 8px var(--codec-text-glow),
-    0 0 16px rgba(0, 255, 65, 0.3);
+    0 0 4px var(--codec-green-bright),
+    0 0 8px var(--codec-green-bright),
+    0 0 16px var(--codec-green-glow),
+    0 0 32px rgba(0, 255, 65, 0.3);
+  animation: phosphor-pulse 2s ease-in-out infinite;
 }
 
-/* Pixel Border */
+/* Pixel Border with Glow */
 .pixel-border {
-  border: var(--codec-border-width) solid var(--codec-green-dark);
+  border: var(--codec-border-width) solid var(--codec-border);
   box-shadow: 
-    inset 0 0 10px rgba(0, 255, 65, 0.1),
-    0 0 5px rgba(0, 255, 65, 0.2);
+    0 0 10px rgba(0, 255, 65, 0.3),
+    0 0 20px rgba(0, 255, 65, 0.1),
+    inset 0 0 10px rgba(0, 255, 65, 0.1);
+}
+
+/* Portrait Frame Glow */
+.portrait-glow {
+  box-shadow:
+    0 0 20px rgba(0, 255, 65, 0.4),
+    0 0 40px rgba(0, 255, 65, 0.2),
+    inset 0 0 30px rgba(0, 255, 65, 0.1);
+}
+
+/* Transmission Animation */
+@keyframes transmission-active {
+  0%, 100% { 
+    box-shadow: 0 0 15px var(--codec-green-glow);
+  }
+  50% { 
+    box-shadow: 0 0 30px var(--codec-green-bright), 0 0 60px var(--codec-green-glow);
+  }
+}
+
+.transmitting {
+  animation: transmission-active 1s ease-in-out infinite;
+}
+
+/* Signal Bars Animation */
+@keyframes signal-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
 /* Button Base */
 .codec-button {
   background: transparent;
-  border: 1px solid var(--codec-green-mid);
+  border: 2px solid var(--codec-green-mid);
   color: var(--codec-green-bright);
   font-family: var(--font-mono);
   padding: 8px 16px;
@@ -128,15 +171,16 @@ body {
 .codec-button:hover {
   background: var(--codec-green-dim);
   box-shadow: 
-    0 0 10px var(--codec-text-glow),
-    inset 0 0 5px rgba(0, 255, 65, 0.2);
+    0 0 15px var(--codec-text-glow),
+    inset 0 0 10px rgba(0, 255, 65, 0.2);
 }
 
 /* Frequency Display Style */
 .frequency-display {
   font-family: var(--font-display);
-  font-size: 2.5rem;
-  letter-spacing: 4px;
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 6px;
   color: var(--codec-green-bright);
 }
 
@@ -148,13 +192,13 @@ body {
 
 .typing-cursor::after {
   content: '▌';
-  animation: blink-cursor 1s step-end infinite;
+  animation: blink-cursor 0.8s step-end infinite;
   color: var(--codec-green-bright);
 }
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
