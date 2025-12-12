@@ -1,0 +1,347 @@
+.codec-container {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
+    padding: 20px;
+    height: 100vh;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Header - Frequency Display */
+.codec-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 15px 20px;
+    background: var(--codec-bg-panel);
+    border: var(--codec-border-width) solid var(--codec-green-dark);
+}
+
+.codec-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 6px;
+    color: var(--codec-green-mid);
+    text-transform: uppercase;
+}
+
+.frequency-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.frequency-value {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    color: var(--codec-green-bright);
+    letter-spacing: 4px;
+    text-shadow:
+        0 0 10px var(--codec-text-glow),
+        0 0 20px var(--codec-text-glow);
+}
+
+.frequency-label {
+    font-size: 0.75rem;
+    color: var(--codec-green-dark);
+    letter-spacing: 2px;
+}
+
+/* Left Panel - Character Portrait */
+.codec-portrait-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--codec-bg-panel);
+    border: var(--codec-border-width) solid var(--codec-green-dark);
+    padding: 15px;
+}
+
+.portrait-frame {
+    position: relative;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, var(--codec-bg-dark) 0%, #0f1a0f 100%);
+    border: 1px solid var(--codec-green-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.portrait-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(100%) hue-rotate(70deg) saturate(150%) brightness(0.8);
+}
+
+.portrait-placeholder {
+    font-size: 4rem;
+    color: var(--codec-green-dim);
+}
+
+.portrait-name {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    letter-spacing: 3px;
+    color: var(--codec-green-mid);
+    padding: 8px 0;
+    border-top: 1px solid var(--codec-green-dim);
+}
+
+.portrait-status {
+    font-size: 0.7rem;
+    color: var(--codec-green-dark);
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* Center - Chat Area */
+.codec-chat-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--codec-bg-panel);
+    border: var(--codec-border-width) solid var(--codec-green-dark);
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    background: rgba(0, 40, 20, 0.3);
+    border-left: 3px solid var(--codec-green-dark);
+}
+
+.message.user {
+    border-left-color: var(--codec-green-bright);
+    background: rgba(0, 60, 30, 0.3);
+}
+
+.message.assistant {
+    border-left-color: var(--codec-green-mid);
+}
+
+.message-sender {
+    font-size: 0.7rem;
+    color: var(--codec-green-dark);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.message-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--codec-green-bright);
+}
+
+/* Input Area */
+.chat-input-area {
+    padding: 15px 20px;
+    border-top: 1px solid var(--codec-green-dim);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    background: var(--codec-bg-dark);
+    border: 1px solid var(--codec-green-dark);
+    color: var(--codec-green-bright);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-input:focus {
+    border-color: var(--codec-green-mid);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+.chat-input::placeholder {
+    color: var(--codec-green-dim);
+}
+
+.send-button {
+    background: var(--codec-green-dim);
+    border: 1px solid var(--codec-green-mid);
+    color: var(--codec-green-bright);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 12px 24px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.send-button:hover:not(:disabled) {
+    background: var(--codec-green-dark);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Right Panel - Settings/Debug */
+.codec-settings-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--codec-bg-panel);
+    border: var(--codec-border-width) solid var(--codec-green-dark);
+    padding: 15px;
+    font-size: 0.8rem;
+}
+
+.settings-section {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--codec-green-dim);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-title {
+    font-size: 0.7rem;
+    color: var(--codec-green-dark);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.frequency-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.frequency-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--codec-green-mid);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.frequency-option:hover {
+    border-color: var(--codec-green-dark);
+    background: rgba(0, 40, 20, 0.3);
+}
+
+.frequency-option.active {
+    border-color: var(--codec-green-bright);
+    background: rgba(0, 60, 30, 0.4);
+    color: var(--codec-green-bright);
+}
+
+.frequency-option-freq {
+    font-family: var(--font-display);
+    min-width: 60px;
+}
+
+.frequency-option-name {
+    flex: 1;
+    text-align: left;
+}
+
+/* Debug Panel */
+.debug-panel {
+    font-size: 0.7rem;
+    color: var(--codec-green-dark);
+}
+
+.debug-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.debug-label {
+    opacity: 0.7;
+}
+
+.debug-value {
+    color: var(--codec-green-mid);
+    font-family: var(--font-display);
+}
+
+/* Loading Animation */
+@keyframes transmission-pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.loading-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+}
+
+.loading-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--codec-green-mid);
+    animation: transmission-pulse 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .codec-container {
+        grid-template-columns: 200px 1fr 200px;
+    }
+}
+
+@media (max-width: 900px) {
+    .codec-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+    }
+
+    .codec-portrait-panel,
+    .codec-settings-panel {
+        display: none;
+    }
+}

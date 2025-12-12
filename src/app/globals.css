@@ -1,0 +1,179 @@
+/* ===================================
+   CODEC - Global Styles
+   Metal Gear 2 Codec Theme
+   =================================== */
+
+:root {
+  /* MGS2 Codec Color Palette */
+  --codec-green-bright: #00ff41;
+  --codec-green-mid: #00cc33;
+  --codec-green-dark: #009922;
+  --codec-green-dim: #004411;
+  --codec-bg-dark: #0a0f0a;
+  --codec-bg-panel: #0d120d;
+  --codec-border: #1a2f1a;
+  --codec-text-glow: rgba(0, 255, 65, 0.6);
+  
+  /* Typography */
+  --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+  --font-display: 'Orbitron', 'Share Tech Mono', monospace;
+  
+  /* Sizing */
+  --codec-border-width: 2px;
+  --codec-glow-blur: 8px;
+  --scanline-opacity: 0.08;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background-color: #000;
+  color: var(--codec-green-bright);
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* CRT Screen Effect Container */
+.crt-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--codec-bg-dark);
+}
+
+/* Scanline Overlay */
+.crt-screen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.3) 2px,
+    rgba(0, 0, 0, 0.3) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  opacity: var(--scanline-opacity);
+}
+
+/* CRT Flicker Animation */
+@keyframes crt-flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.98; }
+  15% { opacity: 0.96; }
+  20% { opacity: 0.99; }
+  100% { opacity: 1; }
+}
+
+.crt-screen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 80%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  pointer-events: none;
+  z-index: 999;
+  animation: crt-flicker 0.15s infinite;
+}
+
+/* Text Glow Effect */
+.glow-text {
+  text-shadow: 
+    0 0 4px var(--codec-text-glow),
+    0 0 8px var(--codec-text-glow),
+    0 0 16px rgba(0, 255, 65, 0.3);
+}
+
+/* Pixel Border */
+.pixel-border {
+  border: var(--codec-border-width) solid var(--codec-green-dark);
+  box-shadow: 
+    inset 0 0 10px rgba(0, 255, 65, 0.1),
+    0 0 5px rgba(0, 255, 65, 0.2);
+}
+
+/* Button Base */
+.codec-button {
+  background: transparent;
+  border: 1px solid var(--codec-green-mid);
+  color: var(--codec-green-bright);
+  font-family: var(--font-mono);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.codec-button:hover {
+  background: var(--codec-green-dim);
+  box-shadow: 
+    0 0 10px var(--codec-text-glow),
+    inset 0 0 5px rgba(0, 255, 65, 0.2);
+}
+
+/* Frequency Display Style */
+.frequency-display {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  letter-spacing: 4px;
+  color: var(--codec-green-bright);
+}
+
+/* Typing Cursor */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.typing-cursor::after {
+  content: '▌';
+  animation: blink-cursor 1s step-end infinite;
+  color: var(--codec-green-bright);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--codec-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--codec-green-dark);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--codec-green-mid);
+}
+
+/* Utility Classes */
+.hidden { display: none; }
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
