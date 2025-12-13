@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import styles from "./page.module.css";
 import { Message, LLMProvider, Persona } from "@/types";
-import { PERSONAS, LLM_PROVIDERS, DEFAULT_PERSONA, DEFAULT_LLM } from "@/config/providers";
+import { PERSONAS, LLM_PROVIDERS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL } from "@/config/providers";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -15,6 +15,7 @@ export default function CodecPage() {
     const [currentLLM, setCurrentLLM] = useState<LLMProvider>(DEFAULT_LLM);
     // Modal for LLM only now
     const [showSelector, setShowSelector] = useState(false);
+    const [selectedService, setSelectedService] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -40,8 +41,22 @@ export default function CodecPage() {
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
+        const assistantMessageId = crypto.randomUUID();
+        // Initial empty assistant message
+        setMessages((prev) => [
+            ...prev,
+            {
+                id: assistantMessageId,
+                role: "assistant",
+                content: "",
+                timestamp: new Date(),
+                providerId: currentLLM.id,
+                personaId: currentPersona.id,
+            },
+        ]);
+
         try {
-            const response = await fetch("/api/chat", {
+            const response = await fetch(`${BACKEND_URL}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -55,31 +70,80 @@ export default function CodecPage() {
             });
 
             if (!response.ok) throw new Error("Transmission failed");
+            if (!response.body) throw new Error("No response body");
 
-            const data = await response.json();
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedContent = "";
 
-            const assistantMessage: Message = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: data.content,
-                timestamp: new Date(),
-                providerId: currentLLM.id,
-                personaId: currentPersona.id,
-                metadata: data.metadata,
-            };
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            setMessages((prev) => [...prev, assistantMessage]);
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(Boolean);
+
+                for (const line of lines) {
+                    try {
+                        const json = JSON.parse(line);
+                        if (json.error) throw new Error(json.error);
+
+                        if (json.content) {
+                            accumulatedContent += json.content;
+                            setMessages((prev) =>
+                                prev.map((msg) =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, content: accumulatedContent }
+                                        : msg
+                                )
+                            );
+                        }
+
+                        if (json.metadata) {
+                            setMessages((prev) =>
+                                prev.map((msg) =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, metadata: json.metadata }
+                                        : msg
+                                )
+                            );
+                        }
+                    } catch (e) {
+                        console.warn("Failed to parse chunk:", line);
+                    }
+                }
+            }
+
         } catch (error) {
-            console.error("CODEC Error:", error);
-            const errorMessage: Message = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: (error as Error).name === 'AbortError'
-                    ? "// Canceled //"
-                    : "// TRANSMISSION ERROR - Check connection //",
-                timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, errorMessage]);
+            console.error("CODEC Error Details:", error);
+            const err = error as Error;
+
+            // Remove the empty partial message if it failed immediately? 
+            // Better to update it with error status.
+
+            let errorContent = "// TRANSMISSION ERROR //";
+            const isNetworkError =
+                err.name === 'TypeError' ||
+                err.message.includes('fetch') ||
+                err.message.includes('Network request failed') ||
+                err.message.includes('Failed to fetch') ||
+                err.message.includes('Load failed');
+
+            if (err.name === 'AbortError') {
+                errorContent = "// CANCELED //";
+            } else if (isNetworkError) {
+                errorContent = "// ENCRYPTION MODULE OFFLINE - CHECK BACKEND //";
+            } else {
+                errorContent = `// ERROR: ${err.message} //`;
+            }
+
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.id === assistantMessageId
+                        ? { ...msg, content: msg.content + "\n" + errorContent }
+                        : msg
+                )
+            );
         } finally {
             setIsLoading(false);
             abortControllerRef.current = null;
@@ -125,7 +189,10 @@ export default function CodecPage() {
                         <span className={styles.frequencyLabel}>MHz</span>
                         <button
                             className={styles.frequencyButton}
-                            onClick={() => setShowSelector(true)}
+                            onClick={() => {
+                                setShowSelector(true);
+                                setSelectedService(null);
+                            }}
                         >
                             LLM CONFIG
                         </button>
@@ -285,31 +352,68 @@ export default function CodecPage() {
                         </div>
 
                         <div className={styles.modalBody}>
-                            <div className={styles.providerList}>
-                                {LLM_PROVIDERS.map((llm) => (
-                                    <div
-                                        key={llm.id}
-                                        className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""
-                                            }`}
-                                        onClick={() => {
-                                            setCurrentLLM(llm);
-                                            setShowSelector(false); // Auto close mostly
-                                        }}
-                                    >
-                                        <div className={styles.providerIcon}>
-                                            {llm.type[0].toUpperCase()}
+                            {!selectedService ? (
+                                <div className={styles.providerList}>
+                                    {Array.from(new Set(LLM_PROVIDERS.map((p) => p.type))).map((type) => (
+                                        <div
+                                            key={type}
+                                            className={styles.providerOption}
+                                            onClick={() => setSelectedService(type)}
+                                        >
+                                            <div className={styles.providerIcon}>
+                                                {type[0].toUpperCase()}
+                                            </div>
+                                            <div className={styles.providerDetails}>
+                                                <div className={styles.providerName}>
+                                                    {type.toUpperCase()}
+                                                </div>
+                                                <div className={styles.providerMeta}>
+                                                    Select Model...
+                                                </div>
+                                            </div>
+                                            <div className={styles.arrow}>→</div>
                                         </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <>
+                                    <div
+                                        className={styles.providerOption}
+                                        style={{ marginBottom: '10px', border: '1px solid #333', opacity: 0.8 }}
+                                        onClick={() => setSelectedService(null)}
+                                    >
+                                        <div className={styles.providerIcon}>←</div>
                                         <div className={styles.providerDetails}>
-                                            <div className={styles.providerName}>
-                                                {llm.name}
-                                            </div>
-                                            <div className={styles.providerMeta}>
-                                                {llm.type} • {llm.model}
-                                            </div>
+                                            <div className={styles.providerName}>BACK</div>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                    <div className={styles.providerList}>
+                                        {LLM_PROVIDERS.filter(p => p.type === selectedService).map((llm) => (
+                                            <div
+                                                key={llm.id}
+                                                className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""
+                                                    }`}
+                                                onClick={() => {
+                                                    setCurrentLLM(llm);
+                                                    setShowSelector(false);
+                                                }}
+                                            >
+                                                <div className={styles.providerIcon}>
+                                                    {llm.type[0].toUpperCase()}
+                                                </div>
+                                                <div className={styles.providerDetails}>
+                                                    <div className={styles.providerName}>
+                                                        {llm.name}
+                                                    </div>
+                                                    <div className={styles.providerMeta}>
+                                                        {llm.model}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

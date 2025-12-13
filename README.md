@@ -1,17 +1,31 @@
-# CODEC - Chat UI
+# Codec Chat UI
 
-Metal Gear 2 inspired Chat UI with multi-LLM support.
+This project has been restructured into two parts:
 
-## Development
+- **frontend/**: Next.js application (UI).
+- **backend/**: Node.js Express application (Chat Logic).
 
-Open in VS Code with Dev Containers extension:
-1. Open folder in VS Code
-2. Command Palette -> "Dev Containers: Reopen in Container"
-3. Wait for container to build
-4. Run `npm run dev`
+## Getting Started
 
-## Features
-- Multiple LLM providers (Ollama, Claude, etc.)
-- Frequency-based provider switching
-- Character personas (Snake, Colonel, Otacon)
-- Debug panel for performance metrics
+You need to run both the frontend and backend services.
+
+### 1. Start Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+Runs on `http://localhost:3001`.
+
+### 2. Start Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Runs on `http://localhost:3002` (or 3000 if available).
+
+## Architecture
+
+The frontend handles the UI and connects to the backend API at `http://localhost:3001/api/chat`.
+The backend handles communications with LLM providers (Ollama, Anthropic, Google).

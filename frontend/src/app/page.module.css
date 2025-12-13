@@ -452,6 +452,29 @@
     }
 }
 
+/* Blinking Cursor for Streaming */
+.cursorBlock {
+    display: inline-block;
+    width: 0.6em;
+    height: 1em;
+    background-color: var(--codec-green-bright);
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
 /* ===== LLM SELECTOR MODAL (Keep for LLM selection only) ===== */
 .modalOverlay {
     position: fixed;

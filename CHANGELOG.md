@@ -1,5 +1,14 @@
 # CODEC Version History
 
+## v0.4.0 - Architecture & Streaming (2025-12-13)
+- **Architecture**: フロントエンドとバックエンドの完全分離
+    - Frontend: Next.js (Port 3000)
+    - Backend: Express (Port 3001)
+- **Feature**: ストリーミング通信 (NDJSON) の実装によるリアルタイム応答
+- **UX**: ストリーミング中のカーソル点滅エフェクトと待機メッセージ改善
+- **Security**: 環境変数の厳格な分離 (`frontend/.env` からAPIキーを削除)
+- **Dev**: `.gitignore` の統合と整理
+
 ## v0.3.0 - UI Overhaul & Cancel Feature (2025-12-13)
 - **Feature**: 送信キャンセル機能の実装（クライアント＆サーバー連携）
 - **UI**: Markdownテーブルのスタイル改善（Code風デザイン）
