@@ -43,14 +43,21 @@ export const LLM_PROVIDERS: LLMProvider[] = [
     {
         id: 'ollama-llama',
         name: 'Llama 3.2',
-        endpoint: 'http://127.0.0.1:11434',
+        endpoint: 'http://host.docker.internal:11434',
         type: 'ollama',
         model: 'llama3.2',
     },
     {
+        id: 'ollama-gpt-oss',
+        name: 'GPT-OSS 20B',
+        endpoint: 'http://host.docker.internal:11434',
+        type: 'ollama',
+        model: 'gpt-oss:20b',
+    },
+    {
         id: 'ollama-codestral',
         name: 'Codestral',
-        endpoint: 'http://127.0.0.1:11434',
+        endpoint: 'http://host.docker.internal:11434',
         type: 'ollama',
         model: 'codestral',
     },

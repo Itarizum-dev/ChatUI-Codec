@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## v0.3.0 - UI Overhaul & Cancel Feature (2025-12-13)
+- **Feature**: 送信キャンセル機能の実装（クライアント＆サーバー連携）
+- **UI**: Markdownテーブルのスタイル改善（Code風デザイン）
+- **UI**: メッセージの左右配置による話者区別（ME:左 / Character:右）
+- **UI**: キャラクターリストの右パネル配置とポートレートサイズ調整
+- **System**: Ollama接続設定の適正化（Host接続対応）
+
 ## v0.2.1 - Gemini 2.5 Flash Fix (2025-12-13)
 - **Bug Fix**: Gemini 2.5 Flashモデル名を修正 (`gemini-2.0-flash-exp` → `gemini-2.5-flash`)
 - **Character**: 新キャラクター「Me」（敵兵ポートレート）を追加

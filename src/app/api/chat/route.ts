@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
                     ],
                     stream: false,
                 }),
+                signal: request.signal,
             });
 
             if (!ollamaResponse.ok) {
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
                         { role: 'user', content: message },
                     ],
                 }),
+                signal: request.signal,
             });
 
             if (!claudeResponse.ok) {
@@ -124,6 +126,7 @@ export async function POST(request: NextRequest) {
                         maxOutputTokens: 4096,
                     }
                 }),
+                signal: request.signal,
             });
 
             if (!geminiResponse.ok) {
@@ -159,9 +162,14 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(response);
     } catch (error) {
-        console.error('Chat API Error:', error);
+        const err = error as Error;
+        if (err.name === 'AbortError' || err.message === 'ResponseAborted' || err.message.includes('Aborted')) {
+            console.log('Chat API Info: Canceled');
+        } else {
+            console.error('Chat API Error:', error);
+        }
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Unknown error' },
+            { error: err.message },
             { status: 500 }
         );
     }
