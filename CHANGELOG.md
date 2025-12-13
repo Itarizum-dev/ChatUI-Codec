@@ -1,5 +1,10 @@
 # CODEC Version History
 
+## v0.2.1 - Gemini 2.5 Flash Fix (2025-12-13)
+- **Bug Fix**: Gemini 2.5 Flashモデル名を修正 (`gemini-2.0-flash-exp` → `gemini-2.5-flash`)
+- **Character**: 新キャラクター「Me」（敵兵ポートレート）を追加
+- **UI**: 左側キャラクター表示の調整
+
 ## v0.2.0 - UI Redesign & Features (2025-12-12)
 - **UI Redesign**: Authentic Metal Gear 2 Codec interface
   - Dual-portrait layout

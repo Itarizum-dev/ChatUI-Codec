@@ -96,6 +96,55 @@ export async function POST(request: NextRequest) {
                 },
                 latencyMs: Date.now() - startTime,
             };
+        } else if (provider.type === 'google') {
+            // Google Gemini API - requires GOOGLE_API_KEY env var
+            const apiKey = process.env.GOOGLE_API_KEY;
+            if (!apiKey) {
+                return NextResponse.json(
+                    { error: 'GOOGLE_API_KEY not configured' },
+                    { status: 500 }
+                );
+            }
+
+            const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [
+                        ...(systemPrompt ? [{ role: 'user', parts: [{ text: `System Instruction: ${systemPrompt}` }] }] : []),
+                        ...(context?.map((m) => ({
+                            role: m.role === 'assistant' ? 'model' : 'user',
+                            parts: [{ text: m.content }]
+                        })) || []),
+                        { role: 'user', parts: [{ text: message }] },
+                    ],
+                    generationConfig: {
+                        maxOutputTokens: 4096,
+                    }
+                }),
+            });
+
+            if (!geminiResponse.ok) {
+                const errText = await geminiResponse.text();
+                throw new Error(`Gemini error: ${geminiResponse.status} - ${errText}`);
+            }
+
+            const geminiData = await geminiResponse.json();
+            responseContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+            // Gemini doesn't always return token counts in the standard response, checking usageMetadata
+            const usage = geminiData.usageMetadata;
+            metadata = {
+                model: provider.model,
+                tokens: {
+                    prompt: usage?.promptTokenCount || 0,
+                    completion: usage?.candidatesTokenCount || 0,
+                    total: usage?.totalTokenCount || 0,
+                },
+                latencyMs: Date.now() - startTime,
+            };
         } else {
             return NextResponse.json(
                 { error: `Provider type '${provider.type}' not implemented` },

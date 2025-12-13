@@ -63,11 +63,11 @@ export const LLM_PROVIDERS: LLMProvider[] = [
         apiKeyEnv: 'ANTHROPIC_API_KEY',
     },
     {
-        id: 'gemini-pro',
-        name: 'Gemini Pro',
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
         endpoint: '/api/chat',
         type: 'google',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         apiKeyEnv: 'GOOGLE_API_KEY',
     },
 ];

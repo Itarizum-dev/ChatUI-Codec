@@ -113,21 +113,17 @@ export default function CodecPage() {
                     </span>
                 </header>
 
-                {/* Left Panel - SNAKE Portrait */}
+                {/* Left Panel - ME Portrait */}
                 <aside className={styles.codecPortraitPanel}>
                     <div className={styles.portraitFrame}>
-                        {PERSONAS.find(p => p.id === 'snake')?.portraitUrl ? (
-                            <img
-                                src={PERSONAS.find(p => p.id === 'snake')?.portraitUrl}
-                                alt="Snake"
-                                className={styles.portraitImage}
-                            />
-                        ) : (
-                            <span className={styles.portraitPlaceholder}>S</span>
-                        )}
+                        <img
+                            src="/portraits/soldier_me.png"
+                            alt="Me"
+                            className={styles.portraitImageRaw}
+                        />
                     </div>
-                    <div className={styles.portraitName}>SNAKE</div>
-                    <div className={styles.portraitStatus}>FOXHOUND</div>
+                    <div className={styles.portraitName}>ME</div>
+                    <div className={styles.portraitStatus}>SOLDIER</div>
                 </aside>
 
                 {/* Center - Chat Area */}
@@ -147,7 +143,7 @@ export default function CodecPage() {
                                 className={`${styles.message} ${styles[msg.role]}`}
                             >
                                 <span className={styles.messageSender}>
-                                    {msg.role === "user" ? "SNAKE" : currentPersona.codename}
+                                    {msg.role === "user" ? "ME" : currentPersona.codename}
                                 </span>
                                 <span className={styles.messageContent}>{msg.content}</span>
                             </div>

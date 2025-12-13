@@ -148,6 +148,16 @@
     opacity: 0.9;
 }
 
+.portraitImageRaw {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    /* No filters or blend modes to preserve original image quality */
+}
+
 .portraitName {
     text-align: center;
     font-family: var(--font-display);
