@@ -205,6 +205,56 @@
     gap: 15px;
 }
 
+.messageRow {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    /* Prevent stacking */
+    width: 100%;
+}
+
+.messageRow.user {
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.messageRow.assistant {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    /* flex-start in row-reverse is the visual Right */
+}
+
+.messageRow.assistant .messageSender {
+    text-align: right;
+    align-self: flex-end;
+    /* Align name to right */
+}
+
+.messageIcon {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--codec-green-dark);
+    background: #000;
+    flex-shrink: 0;
+    margin-top: 4px;
+    /* Align with top of bubble */
+}
+
+.messageIcon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(100%) hue-rotate(90deg) saturate(200%);
+    mix-blend-mode: hard-light;
+}
+
+/* Make ME icon clearer/brighter */
+.messageRow.user .messageIcon img {
+    filter: sepia(100%) hue-rotate(90deg) saturate(150%) brightness(1.2);
+    mix-blend-mode: normal;
+}
+
 .message {
     display: flex;
     flex-direction: column;
@@ -213,6 +263,8 @@
     background: rgba(0, 40, 20, 0.4);
     border: 1px solid var(--codec-green-dim);
     position: relative;
+    flex: 1;
+    /* Fill remaining space to look like a full Codec bar */
 }
 
 /* User Message - Left Border (ME) */

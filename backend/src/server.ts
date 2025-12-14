@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { ChatRequest, ChatResponse, MessageMetadata } from './types';
-import { DEFAULT_PROVIDERS } from './config';
+import { DEFAULT_PROVIDERS, PERSONAS } from './config';
 
 dotenv.config();
 
@@ -16,6 +16,20 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok', service: 'Codec Backend', version: '0.1.0' });
 });
 
+// Helper to format context with character names
+const formatContext = (context?: import('./types').Message[]) => {
+    return context?.map((m) => {
+        let content = m.content;
+        if (m.role === 'assistant' && m.personaId) {
+            const p = PERSONAS.find((per) => per.id === m.personaId);
+            if (p) {
+                content = `[${p.codename}]: ${content}`;
+            }
+        }
+        return { role: m.role, content };
+    }) || [];
+};
+
 app.post('/api/chat', async (req: Request, res: Response) => {
     const startTime = Date.now();
     console.log(`[${new Date().toISOString()}] Chat request received`);
@@ -24,6 +38,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+
+    // Send immediate ping to confirm connection
+    res.write(JSON.stringify({ type: 'ping' }) + '\n');
 
     try {
         const body: ChatRequest = req.body;
@@ -48,7 +65,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
                     model: provider.model,
                     messages: [
                         ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-                        ...(context?.map((m) => ({ role: m.role, content: m.content })) || []),
+                        ...formatContext(context),
                         { role: 'user', content: message },
                     ],
                     stream: true,
@@ -99,7 +116,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
                     max_tokens: 4096,
                     system: systemPrompt || '',
                     messages: [
-                        ...(context?.map((m) => ({ role: m.role, content: m.content })) || []),
+                        ...formatContext(context),
                         { role: 'user', content: message },
                     ],
                     stream: true,
@@ -149,16 +166,18 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             const apiKey = process.env.GOOGLE_API_KEY;
             if (!apiKey) throw new Error('GOOGLE_API_KEY not configured');
 
+            const formattedContext = formatContext(context).map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user', // Gemini uses 'model'
+                parts: [{ text: m.content }]
+            }));
+
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:streamGenerateContent?key=${apiKey}&alt=sse`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [
                         ...(systemPrompt ? [{ role: 'user', parts: [{ text: `System Instruction: ${systemPrompt}` }] }] : []),
-                        ...(context?.map((m) => ({
-                            role: m.role === 'assistant' ? 'model' : 'user',
-                            parts: [{ text: m.content }]
-                        })) || []),
+                        ...formattedContext,
                         { role: 'user', parts: [{ text: message }] },
                     ],
                     generationConfig: { maxOutputTokens: 4096 }

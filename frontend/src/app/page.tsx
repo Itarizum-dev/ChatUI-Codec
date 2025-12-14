@@ -55,6 +55,13 @@ export default function CodecPage() {
             },
         ]);
 
+        // Connection Timeout Logic
+        const CONNECTION_TIMEOUT = 2000;
+        const timeoutId = setTimeout(() => {
+            console.warn("Backend connection timed out");
+            controller.abort("timeout");
+        }, CONNECTION_TIMEOUT);
+
         try {
             const response = await fetch(`${BACKEND_URL}/api/chat`, {
                 method: "POST",
@@ -68,6 +75,9 @@ export default function CodecPage() {
                 }),
                 signal: controller.signal,
             });
+
+            // Connection established, clear timeout
+            clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error("Transmission failed");
             if (!response.body) throw new Error("No response body");
@@ -86,6 +96,10 @@ export default function CodecPage() {
                 for (const line of lines) {
                     try {
                         const json = JSON.parse(line);
+
+                        // Ignore ping messages
+                        if (json.type === 'ping') continue;
+
                         if (json.error) throw new Error(json.error);
 
                         if (json.content) {
@@ -115,26 +129,29 @@ export default function CodecPage() {
             }
 
         } catch (error) {
-            console.error("CODEC Error Details:", error);
-            const err = error as Error;
+            // Ensure timeout is cleared if fetch failed immediately
+            clearTimeout(timeoutId);
 
-            // Remove the empty partial message if it failed immediately? 
-            // Better to update it with error status.
+            console.error("CODEC Error Details:", error);
+            const _err = error as any; // Cast to any to access custom properties/messages easily
+            const errMessage = _err.message || _err.toString();
 
             let errorContent = "// TRANSMISSION ERROR //";
             const isNetworkError =
-                err.name === 'TypeError' ||
-                err.message.includes('fetch') ||
-                err.message.includes('Network request failed') ||
-                err.message.includes('Failed to fetch') ||
-                err.message.includes('Load failed');
+                _err.name === 'TypeError' ||
+                errMessage.includes('fetch') ||
+                errMessage.includes('Network request failed') ||
+                errMessage.includes('Failed to fetch') ||
+                errMessage.includes('Load failed');
 
-            if (err.name === 'AbortError') {
+            if (_err === 'timeout' || (_err.name === 'AbortError' && abortControllerRef.current?.signal.aborted && abortControllerRef.current.signal.reason === 'timeout')) {
+                errorContent = "// ENCRYPTION MODULE OFFLINE - TIMEOUT //";
+            } else if (_err.name === 'AbortError') {
                 errorContent = "// CANCELED //";
             } else if (isNetworkError) {
                 errorContent = "// ENCRYPTION MODULE OFFLINE - CHECK BACKEND //";
             } else {
-                errorContent = `// ERROR: ${err.message} //`;
+                errorContent = `// ERROR: ${errMessage} //`;
             }
 
             setMessages((prev) =>
@@ -226,27 +243,64 @@ export default function CodecPage() {
                                 </span>
                             </div>
                         )}
-                        {messages.map((msg) => (
-                            <div
-                                key={msg.id}
-                                className={`${styles.message} ${msg.role === 'user' ? styles.user : styles.assistant}`}
-                            >
-                                <span className={styles.messageSender}>
-                                    {msg.role === "user" ? "ME" : currentPersona.codename}
-                                </span>
-                                <div className={`${styles.messageContent} markdown-content`}>
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkGfm]}
-                                        components={{
-                                            // Override p to avoid unnecessary margins in simple messages if needed
-                                            // but global css handles markdown-content p
-                                        }}
-                                    >
-                                        {msg.content}
-                                    </ReactMarkdown>
+                        {messages.map((msg) => {
+                            const isUser = msg.role === 'user';
+                            const persona = !isUser
+                                ? (PERSONAS.find(p => p.id === msg.personaId) || currentPersona)
+                                : null;
+                            const iconSrc = isUser
+                                ? "/portraits/soldier_me.png"
+                                : (persona?.portraitUrl || null);
+                            const iconAlt = isUser ? "ME" : (persona?.codename || "Unknown");
+
+                            return (
+                                <div key={msg.id} className={`${styles.messageRow} ${isUser ? styles.user : styles.assistant}`}>
+                                    <div className={styles.messageIcon}>
+                                        {iconSrc ? (
+                                            <img src={iconSrc} alt={iconAlt} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--codec-green-mid)' }}>
+                                                {iconAlt[0]}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={`${styles.message} ${isUser ? styles.user : styles.assistant}`}>
+                                        <span className={styles.messageSender}>
+                                            {isUser ? "ME" : persona?.codename}
+                                        </span>
+                                        <div className={`${styles.messageContent} markdown-content`}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    code({ node, inline, className, children, ...props }: any) {
+                                                        const match = /language-(\w+)/.exec(className || '')
+                                                        return !inline && match ? (
+                                                            <div className="code-block-wrapper">
+                                                                <div className="code-block-header">
+                                                                    <span>{match[1]}</span>
+                                                                </div>
+                                                                <code className={className} {...props}>
+                                                                    {children}
+                                                                </code>
+                                                            </div>
+                                                        ) : (
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        )
+                                                    }
+                                                }}
+                                            >
+                                                {msg.content || (isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 ? "// RECEIVING TRANSMISSION... //" : "")}
+                                            </ReactMarkdown>
+                                            {isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 && (
+                                                <span className={styles.cursorBlock}></span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {isLoading && (
                             <div className={styles.loadingIndicator}>
                                 <span className={styles.loadingDot}></span>

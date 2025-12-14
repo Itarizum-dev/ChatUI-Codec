@@ -1,5 +1,11 @@
 # CODEC Version History
 
+## v0.5.0 - Context & UI Awareness (2025-12-14)
+- **Context Awareness**: Backend now prepends character names (e.g., `[SNAKE]:`) to the conversation history sent to the LLM, ensuring better roleplay continuity.
+- **Character Icons**: Added visual avatars next to chat messages. "Me" icon is on the left, character icons on the right.
+- **UI Alignment**: Swapped chat layout (User Left, Character Right) to match standard messaging apps while retaining the Codec aesthetic.
+- **Visual Polish**: Improved icon brightness for the user and restored full-width message bars for the classic "Metal Gear" look.
+
 ## v0.4.0 - Architecture & Streaming (2025-12-13)
 - **Architecture**: フロントエンドとバックエンドの完全分離
     - Frontend: Next.js (Port 3000)
