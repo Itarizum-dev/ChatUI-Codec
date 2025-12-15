@@ -6,6 +6,7 @@ import { Message, LLMProvider, Persona } from "@/types";
 import { PERSONAS, LLM_PROVIDERS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL } from "@/config/providers";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import McpSettingsModal from '@/components/McpSettingsModal';
 
 export default function CodecPage() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -16,6 +17,10 @@ export default function CodecPage() {
     // Modal for LLM only now
     const [showSelector, setShowSelector] = useState(false);
     const [selectedService, setSelectedService] = useState<string | null>(null);
+    // MCP state
+    const [useMcp, setUseMcp] = useState(false);
+    const [showMcpSettings, setShowMcpSettings] = useState(false);
+    const [toolStatus, setToolStatus] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -72,6 +77,7 @@ export default function CodecPage() {
                     personaId: currentPersona.id,
                     context: messages.slice(-10),
                     systemPrompt: currentPersona.systemPrompt,
+                    useMcp: useMcp,
                 }),
                 signal: controller.signal,
             });
@@ -102,7 +108,22 @@ export default function CodecPage() {
 
                         if (json.error) throw new Error(json.error);
 
+                        // Handle tool calls
+                        if (json.toolCall) {
+                            setToolStatus(`🔧 Calling: ${json.toolCall.name}`);
+                            continue;
+                        }
+                        if (json.toolResult) {
+                            setToolStatus(`✓ ${json.toolResult.name} done`);
+                            continue;
+                        }
+                        if (json.warning) {
+                            console.warn('MCP Warning:', json.warning);
+                            continue;
+                        }
+
                         if (json.content) {
+                            setToolStatus(null);
                             accumulatedContent += json.content;
                             setMessages((prev) =>
                                 prev.map((msg) =>
@@ -163,6 +184,7 @@ export default function CodecPage() {
             );
         } finally {
             setIsLoading(false);
+            setToolStatus(null);
             abortControllerRef.current = null;
         }
     };
@@ -176,6 +198,7 @@ export default function CodecPage() {
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
             handleSend();
         }
@@ -204,6 +227,20 @@ export default function CodecPage() {
                             {currentPersona.frequency}
                         </span>
                         <span className={styles.frequencyLabel}>MHz</span>
+                        <button
+                            className={`${styles.mcpToggle} ${useMcp ? styles.active : ''}`}
+                            onClick={() => setUseMcp(!useMcp)}
+                            title={useMcp ? 'MCP Enabled' : 'MCP Disabled'}
+                        >
+                            MCP {useMcp ? 'ON' : 'OFF'}
+                        </button>
+                        <button
+                            className={styles.mcpSettingsBtn}
+                            onClick={() => setShowMcpSettings(true)}
+                            title="MCP Settings"
+                        >
+                            ⚙
+                        </button>
                         <button
                             className={styles.frequencyButton}
                             onClick={() => {
@@ -303,9 +340,15 @@ export default function CodecPage() {
                         })}
                         {isLoading && (
                             <div className={styles.loadingIndicator}>
-                                <span className={styles.loadingDot}></span>
-                                <span className={styles.loadingDot}></span>
-                                <span className={styles.loadingDot}></span>
+                                {toolStatus ? (
+                                    <span className={styles.toolStatus}>{toolStatus}</span>
+                                ) : (
+                                    <>
+                                        <span className={styles.loadingDot}></span>
+                                        <span className={styles.loadingDot}></span>
+                                        <span className={styles.loadingDot}></span>
+                                    </>
+                                )}
                             </div>
                         )}
                         <div ref={messagesEndRef} />
@@ -472,6 +515,13 @@ export default function CodecPage() {
                     </div>
                 </div>
             )}
+
+            {/* MCP Settings Modal */}
+            <McpSettingsModal
+                isOpen={showMcpSettings}
+                onClose={() => setShowMcpSettings(false)}
+                backendUrl={BACKEND_URL}
+            />
         </>
     );
 }

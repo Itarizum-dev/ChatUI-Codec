@@ -1,5 +1,22 @@
 # CODEC Version History
 
+## v0.6.0 - MCP Integration (2025-12-14)
+- **MCP Support**: Claude Desktop互換のModel Context Protocol (MCP) を導入
+  - ヘッダーにMCPトグル（ON/OFF）と設定ボタン（⚙）を追加
+  - MCPサーバーの追加・削除用モーダルUI
+  - ツール実行中のステータス表示（🔧 Calling... / ✓ done）
+  - **Quick Add: Filesystem** - ディレクトリパスを入力してワンクリックでファイルシステムサーバーを追加
+- **Backend**: `McpManager` によるStdioサーバー管理とツール実行
+  - `/api/mcp/servers` (GET/POST/DELETE) APIエンドポイント
+  - Claude/Gemini/Ollamaでのツール実行対応（モデル依存）
+  - **Stability**: サーバー接続時のタイムアウト処理(15秒)を追加し、無限ロードを防止
+  - **Debug**: ツール実行時の詳細ログ出力を追加（引数・戻り値の確認用）
+  - **Fix**: Gemini API向けにツール定義のJSON Schemaから `$schema` 等の不要フィールドを削除
+  - **Feature**: OllamaでのMCPツール実行をサポート（OpenAI互換APIを使用）
+  - **Feature**: MCPサーバー個別のON/OFF切り替え機能を追加
+  - **Fix**: Settings Modalでツール一覧取得時に発生していたエラー(`Cannot read properties of undefined`)を修正（`tools`プロパティの欠落に対応）
+- **Config**: `backend/data/mcp-settings.json` で設定を永続化
+
 ## v0.5.0 - Context & UI Awareness (2025-12-14)
 - **Context Awareness**: Backend now prepends character names (e.g., `[SNAKE]:`) to the conversation history sent to the LLM, ensuring better roleplay continuity.
 - **Character Icons**: Added visual avatars next to chat messages. "Me" icon is on the left, character icons on the right.

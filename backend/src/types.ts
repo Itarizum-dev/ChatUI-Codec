@@ -43,6 +43,7 @@ export interface ChatRequest {
     personaId?: string;
     context?: Message[];
     systemPrompt?: string;
+    useMcp?: boolean;
 }
 
 export interface ChatResponse {
