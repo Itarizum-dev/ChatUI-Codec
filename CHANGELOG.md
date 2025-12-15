@@ -1,5 +1,9 @@
 # CODEC Version History
 
+## v0.6.1 - Stability & IME Fix (2025-12-15)
+- **Backend**: OllamaなどのLLM応答待ち時にKeep-Alive Ping (15秒毎) とタイムアウト (5分) を導入し、接続切れを防止
+- **Frontend**: 日本語入力 (IME) 確定時のEnterキーによる意図しないメッセージ送信を修正
+
 ## v0.6.0 - MCP Integration (2025-12-14)
 - **MCP Support**: Claude Desktop互換のModel Context Protocol (MCP) を導入
   - ヘッダーにMCPトグル（ON/OFF）と設定ボタン（⚙）を追加

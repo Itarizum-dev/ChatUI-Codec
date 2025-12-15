@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.json({ status: 'ok', service: 'Codec Backend', version: '0.2.0' });
+    res.json({ status: 'ok', service: 'Codec Backend', version: '0.6.1' });
 });
 
 // ============================================
