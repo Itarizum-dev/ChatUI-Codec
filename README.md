@@ -13,6 +13,8 @@ You need to run both the frontend and backend services.
 ```bash
 cd backend
 npm install
+# Copy .env.example to .env and add your API keys
+cp .env.example .env
 npm run dev
 ```
 Runs on `http://localhost:3001`.

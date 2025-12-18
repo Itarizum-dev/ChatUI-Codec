@@ -1,7 +1,8 @@
 # CODEC Version History
 
-## v0.7.0 - GitHub Private Repository (2025-12-18)
+## v0.7.0 - GitHub Private Repository & Env Setup (2025-12-18)
 - **Git**: GitHubの非公開リポジトリ (`Itarizum-dev/ChatUI-Codec`) での管理を開始
+- **Docs**: 初回セットアップ用の `.env.example` を追加し、README に環境変数設定手順を追記
 
 ## v0.6.1 - Stability & IME Fix (2025-12-15)
 - **Backend**: OllamaなどのLLM応答待ち時にKeep-Alive Ping (15秒毎) とタイムアウト (5分) を導入し、接続切れを防止
