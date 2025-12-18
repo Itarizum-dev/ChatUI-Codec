@@ -37,6 +37,16 @@
     text-transform: uppercase;
 }
 
+.codecMainTitle {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--codec-green-bright);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
 .frequencyContainer {
     display: flex;
     align-items: center;
@@ -102,8 +112,8 @@
 
 .portraitFrame {
     position: relative;
-    /* Reduced aspect ratio size logic handled by container width */
-    width: 65%;
+    /* Smaller portrait for ME - focus on right panel characters */
+    width: 50%;
     /* Make portrait smaller within panel */
     margin: 0 auto 10px;
     /* Center and add gap */
@@ -182,6 +192,91 @@
     color: var(--codec-green-dark);
     text-align: center;
     letter-spacing: 1px;
+}
+
+/* Left Panel Filler */
+.panelFiller {
+    margin-top: auto;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+}
+
+.audioVisualizer {
+    display: flex;
+    gap: 4px;
+    height: 30px;
+    align-items: flex-end;
+}
+
+.bar {
+    width: 6px;
+    background: var(--codec-green-bright);
+    animation: equalizer 1s ease-in-out infinite;
+}
+
+.bar:nth-child(1) {
+    height: 40%;
+    animation-delay: 0.1s;
+}
+
+.bar:nth-child(2) {
+    height: 80%;
+    animation-delay: 0.2s;
+}
+
+.bar:nth-child(3) {
+    height: 100%;
+    animation-delay: 0.3s;
+}
+
+.bar:nth-child(4) {
+    height: 70%;
+    animation-delay: 0.4s;
+}
+
+.bar:nth-child(5) {
+    height: 50%;
+    animation-delay: 0.5s;
+}
+
+@keyframes equalizer {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        height: 20%;
+    }
+
+    50% {
+        opacity: 1;
+        height: 100%;
+        box-shadow: 0 0 8px var(--codec-green-bright);
+    }
+}
+
+.systemData {
+    width: 100%;
+    border-top: 1px solid var(--codec-green-dim);
+    padding-top: 10px;
+}
+
+.dataRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    color: var(--codec-green-dark);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+}
+
+.dataRow span:last-child {
+    color: var(--codec-green-mid);
+    font-weight: 700;
 }
 
 /* ===== CENTER - Chat/Transmission Area ===== */
@@ -376,8 +471,8 @@
 
 .contactListTitle {
     font-family: var(--font-display);
-    font-size: 0.8rem;
-    color: var(--codec-green-mid);
+    font-size: 0.7rem;
+    color: var(--codec-green-dim);
     padding-bottom: 8px;
     margin-bottom: 8px;
     border-bottom: 1px solid var(--codec-green-dim);
@@ -389,9 +484,9 @@
 .contactItem {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px;
-    margin-bottom: 6px;
+    gap: 15px;
+    padding: 12px;
+    margin-bottom: 8px;
     background: rgba(0, 20, 10, 0.5);
     border: 1px solid var(--codec-green-dim);
     cursor: pointer;
@@ -401,17 +496,18 @@
 .contactItem:hover {
     background: rgba(0, 50, 25, 0.5);
     border-color: var(--codec-green-mid);
+    transform: translateX(-2px);
 }
 
 .contactItem.active {
     background: rgba(0, 60, 30, 0.6);
     border-color: var(--codec-green-bright);
-    box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.1);
+    box-shadow: inset 0 0 15px rgba(0, 255, 65, 0.1);
 }
 
 .contactIcon {
-    width: 32px;
-    height: 32px;
+    width: 50px;
+    height: 50px;
     border: 1px solid var(--codec-green-dark);
     background: #000;
     display: flex;
@@ -420,6 +516,12 @@
     font-size: 0.8rem;
     flex-shrink: 0;
     overflow: hidden;
+    transition: all 0.2s;
+}
+
+.contactItem:hover .contactIcon {
+    border-color: var(--codec-green-mid);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
 }
 
 .contactIcon img {

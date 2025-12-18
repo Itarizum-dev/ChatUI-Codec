@@ -250,7 +250,7 @@ export default function CodecPage() {
             <div className={styles.codecContainer}>
                 {/* Header */}
                 <header className={styles.codecHeader}>
-                    <span className={styles.codecTitle}>SNAKE</span>
+                    <span className={styles.codecMainTitle}>CODEC</span>
                     <div className={styles.frequencyContainer}>
                         <span className={styles.frequencyValue}>
                             {currentPersona.frequency}
@@ -296,6 +296,31 @@ export default function CodecPage() {
                     </div>
                     <div className={styles.portraitName}>ME</div>
                     <div className={styles.portraitStatus}>SOLDIER</div>
+
+                    {/* Decorative Filler: Audio Visualizer & Status */}
+                    <div className={styles.panelFiller}>
+                        <div className={styles.audioVisualizer}>
+                            <div className={styles.bar}></div>
+                            <div className={styles.bar}></div>
+                            <div className={styles.bar}></div>
+                            <div className={styles.bar}></div>
+                            <div className={styles.bar}></div>
+                        </div>
+                        <div className={styles.systemData}>
+                            <div className={styles.dataRow}>
+                                <span>ENCRYPTION</span>
+                                <span>ON</span>
+                            </div>
+                            <div className={styles.dataRow}>
+                                <span>MUTE</span>
+                                <span>OFF</span>
+                            </div>
+                            <div className={styles.dataRow}>
+                                <span>SIGNAL</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                    </div>
                 </aside>
 
                 {/* Center - Chat Area */}

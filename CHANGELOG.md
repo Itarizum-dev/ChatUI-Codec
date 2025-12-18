@@ -1,5 +1,10 @@
 # CODEC Version History
 
+## v0.8.2 - UI Visual Enhancements (2025-12-18)
+- **UI**: 左上タイトルを「SNAKE」から「CODEC」に変更し、デザインを強調
+- **UI**: 左パネル（ME）のポートレートを縮小し、空きスペースにオーディオビジュアライザーとシステムステータス（ENCRYPTION/MUTE/SIGNAL）を追加して情報密度を向上
+- **UI**: 右パネルのキャラクターリストアイコンを拡大（32px→50px）し、視認性とクリックしやすさを改善
+
 ## v0.8.1 - Dynamic Model ID Resolution Fix (2025-12-18)
 - **Fix**: 動的に取得したモデルIDでのチャットが動作しない問題を修正
   - バックエンドでproviderIdから動的にプロバイダー設定を解決するロジックを追加
