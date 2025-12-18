@@ -38,37 +38,32 @@ export const PERSONAS: Persona[] = [
     },
 ];
 
-// ===== LLM PROVIDERS (独立したLLM) =====
-export const LLM_PROVIDERS: LLMProvider[] = [
-    {
-        id: 'ollama-llama',
-        name: 'Llama 3.2',
-        endpoint: 'http://host.docker.internal:11434',
-        type: 'ollama',
-        model: 'llama3.2',
-    },
-    {
-        id: 'ollama-gpt-oss',
-        name: 'GPT-OSS 20B',
-        endpoint: 'http://host.docker.internal:11434',
-        type: 'ollama',
-        model: 'gpt-oss:20b',
-    },
-    {
-        id: 'ollama-codestral',
-        name: 'Codestral',
-        endpoint: 'http://host.docker.internal:11434',
-        type: 'ollama',
-        model: 'codestral',
-    },
-    {
-        id: 'claude-sonnet',
-        name: 'Claude Sonnet',
-        endpoint: '/api/chat',
-        type: 'anthropic',
-        model: 'claude-sonnet-4-20250514',
-        apiKeyEnv: 'ANTHROPIC_API_KEY',
-    },
+// ===== 動的モデル取得用インターフェース =====
+export interface ModelInfo {
+    id: string;
+    name: string;
+    provider: 'ollama' | 'anthropic' | 'google' | 'openai';
+    model: string;
+    available: boolean;
+}
+
+export interface ProviderInfo {
+    name: string;
+    available: boolean;
+    models: ModelInfo[];
+}
+
+export interface ModelsResponse {
+    providers: {
+        ollama: ProviderInfo;
+        google: ProviderInfo;
+        anthropic: ProviderInfo;
+        openai: ProviderInfo;
+    };
+}
+
+// ===== フォールバック用静的プロバイダー =====
+export const FALLBACK_PROVIDERS: LLMProvider[] = [
     {
         id: 'gemini-2.5-flash',
         name: 'Gemini 2.5 Flash',
@@ -81,9 +76,48 @@ export const LLM_PROVIDERS: LLMProvider[] = [
 
 // Default selections
 export const DEFAULT_PERSONA = PERSONAS[0];
-export const DEFAULT_LLM = LLM_PROVIDERS[1];
-
-// Legacy export for compatibility
-export const DEFAULT_PROVIDERS = LLM_PROVIDERS;
+export const DEFAULT_LLM = FALLBACK_PROVIDERS[0];
 
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+
+// ===== 動的モデル取得関数 =====
+export async function fetchAvailableModels(): Promise<ModelsResponse | null> {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/models`, {
+            signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (error) {
+        console.error('[Models] Failed to fetch:', error);
+        return null;
+    }
+}
+
+// ModelInfoをLLMProviderに変換
+export function modelToProvider(model: ModelInfo): LLMProvider {
+    const typeMap: Record<string, 'ollama' | 'anthropic' | 'google' | 'openai'> = {
+        ollama: 'ollama',
+        anthropic: 'anthropic',
+        google: 'google',
+        openai: 'openai',
+    };
+
+    return {
+        id: model.id,
+        name: model.name,
+        endpoint: model.provider === 'ollama'
+            ? `http://${process.env.NEXT_PUBLIC_OLLAMA_HOST || 'localhost:11434'}`
+            : '/api/chat',
+        type: typeMap[model.provider] || 'custom',
+        model: model.model,
+        apiKeyEnv: model.provider === 'google' ? 'GOOGLE_API_KEY'
+            : model.provider === 'anthropic' ? 'ANTHROPIC_API_KEY'
+                : model.provider === 'openai' ? 'OPENAI_API_KEY'
+                    : undefined,
+    };
+}
+
+// Legacy exports for compatibility
+export const LLM_PROVIDERS = FALLBACK_PROVIDERS;
+export const DEFAULT_PROVIDERS = FALLBACK_PROVIDERS;

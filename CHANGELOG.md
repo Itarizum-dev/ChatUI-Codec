@@ -1,5 +1,17 @@
 # CODEC Version History
 
+## v0.8.0 - Dynamic LLM Model Selection (2025-12-18)
+- **Feature**: LLMモデル一覧を動的に取得する機能を追加
+  - Ollama: ローカルにインストールされたモデルを自動検出
+  - Gemini: 利用可能な全モデル（34+）を動的取得
+  - Claude/OpenAI: APIキー設定時のみ表示（未設定時はスキップ）
+- **Backend**: `/api/models` エンドポイントを追加
+  - 各プロバイダーから並列でモデル一覧を取得
+  - タイムアウト処理（5-10秒）で安定性を確保
+- **Frontend**: モデル選択UIを動的化
+  - プロバイダーごとにモデル数を表示
+  - ローディング状態とスクロール対応
+
 ## v0.7.1 - Ollama Environment Variable Support (2025-12-18)
 - **Backend**: Ollama接続エンドポイントを環境変数化（`OLLAMA_HOST`）し、ローカル実行とdevcontainerの両方に対応
   - デフォルト: `localhost:11434`（ローカル実行時）

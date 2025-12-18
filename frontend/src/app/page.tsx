@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import styles from "./page.module.css";
 import { Message, LLMProvider, Persona } from "@/types";
-import { PERSONAS, LLM_PROVIDERS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL } from "@/config/providers";
+import { PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import McpSettingsModal from '@/components/McpSettingsModal';
@@ -24,10 +24,39 @@ export default function CodecPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
+    // Dynamic model state
+    const [modelsData, setModelsData] = useState<ModelsResponse | null>(null);
+    const [modelsLoading, setModelsLoading] = useState(false);
+    const [availableProviders, setAvailableProviders] = useState<LLMProvider[]>(FALLBACK_PROVIDERS);
+
     // Auto-scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    // Fetch available models on mount and when modal opens
+    const refreshModels = useCallback(async () => {
+        setModelsLoading(true);
+        const data = await fetchAvailableModels();
+        if (data) {
+            setModelsData(data);
+            // Convert all models to LLMProvider format
+            const allModels: LLMProvider[] = [];
+            Object.values(data.providers).forEach(provider => {
+                if (provider.available) {
+                    provider.models.forEach(m => {
+                        allModels.push(modelToProvider(m));
+                    });
+                }
+            });
+            setAvailableProviders(allModels.length > 0 ? allModels : FALLBACK_PROVIDERS);
+        }
+        setModelsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        refreshModels();
+    }, [refreshModels]);
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -449,28 +478,62 @@ export default function CodecPage() {
                         </div>
 
                         <div className={styles.modalBody}>
-                            {!selectedService ? (
+                            {modelsLoading ? (
                                 <div className={styles.providerList}>
-                                    {Array.from(new Set(LLM_PROVIDERS.map((p) => p.type))).map((type) => (
-                                        <div
-                                            key={type}
-                                            className={styles.providerOption}
-                                            onClick={() => setSelectedService(type)}
-                                        >
-                                            <div className={styles.providerIcon}>
-                                                {type[0].toUpperCase()}
-                                            </div>
-                                            <div className={styles.providerDetails}>
-                                                <div className={styles.providerName}>
-                                                    {type.toUpperCase()}
+                                    <div className={styles.loadingIndicator}>
+                                        <span className={styles.loadingDot}></span>
+                                        <span className={styles.loadingDot}></span>
+                                        <span className={styles.loadingDot}></span>
+                                        <span style={{ marginLeft: 10 }}>Loading models...</span>
+                                    </div>
+                                </div>
+                            ) : !selectedService ? (
+                                <div className={styles.providerList}>
+                                    {modelsData ? (
+                                        Object.entries(modelsData.providers)
+                                            .filter(([_, p]) => p.available)
+                                            .map(([key, provider]) => (
+                                                <div
+                                                    key={key}
+                                                    className={styles.providerOption}
+                                                    onClick={() => setSelectedService(key)}
+                                                >
+                                                    <div className={styles.providerIcon}>
+                                                        {provider.name[0]}
+                                                    </div>
+                                                    <div className={styles.providerDetails}>
+                                                        <div className={styles.providerName}>
+                                                            {provider.name}
+                                                        </div>
+                                                        <div className={styles.providerMeta}>
+                                                            {provider.models.length} models available
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.arrow}>→</div>
                                                 </div>
-                                                <div className={styles.providerMeta}>
-                                                    Select Model...
+                                            ))
+                                    ) : (
+                                        Array.from(new Set(availableProviders.map((p) => p.type))).map((type) => (
+                                            <div
+                                                key={type}
+                                                className={styles.providerOption}
+                                                onClick={() => setSelectedService(type)}
+                                            >
+                                                <div className={styles.providerIcon}>
+                                                    {type[0].toUpperCase()}
                                                 </div>
+                                                <div className={styles.providerDetails}>
+                                                    <div className={styles.providerName}>
+                                                        {type.toUpperCase()}
+                                                    </div>
+                                                    <div className={styles.providerMeta}>
+                                                        Select Model...
+                                                    </div>
+                                                </div>
+                                                <div className={styles.arrow}>→</div>
                                             </div>
-                                            <div className={styles.arrow}>→</div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             ) : (
                                 <>
@@ -484,30 +547,57 @@ export default function CodecPage() {
                                             <div className={styles.providerName}>BACK</div>
                                         </div>
                                     </div>
-                                    <div className={styles.providerList}>
-                                        {LLM_PROVIDERS.filter(p => p.type === selectedService).map((llm) => (
-                                            <div
-                                                key={llm.id}
-                                                className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""
-                                                    }`}
-                                                onClick={() => {
-                                                    setCurrentLLM(llm);
-                                                    setShowSelector(false);
-                                                }}
-                                            >
-                                                <div className={styles.providerIcon}>
-                                                    {llm.type[0].toUpperCase()}
-                                                </div>
-                                                <div className={styles.providerDetails}>
-                                                    <div className={styles.providerName}>
-                                                        {llm.name}
+                                    <div className={styles.providerList} style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                        {modelsData && modelsData.providers[selectedService as keyof typeof modelsData.providers] ? (
+                                            modelsData.providers[selectedService as keyof typeof modelsData.providers].models.map((model) => {
+                                                const llm = modelToProvider(model);
+                                                return (
+                                                    <div
+                                                        key={llm.id}
+                                                        className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
+                                                        onClick={() => {
+                                                            setCurrentLLM(llm);
+                                                            setShowSelector(false);
+                                                        }}
+                                                    >
+                                                        <div className={styles.providerIcon}>
+                                                            {llm.type[0].toUpperCase()}
+                                                        </div>
+                                                        <div className={styles.providerDetails}>
+                                                            <div className={styles.providerName}>
+                                                                {llm.name}
+                                                            </div>
+                                                            <div className={styles.providerMeta}>
+                                                                {llm.model}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className={styles.providerMeta}>
-                                                        {llm.model}
+                                                );
+                                            })
+                                        ) : (
+                                            availableProviders.filter(p => p.type === selectedService).map((llm) => (
+                                                <div
+                                                    key={llm.id}
+                                                    className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
+                                                    onClick={() => {
+                                                        setCurrentLLM(llm);
+                                                        setShowSelector(false);
+                                                    }}
+                                                >
+                                                    <div className={styles.providerIcon}>
+                                                        {llm.type[0].toUpperCase()}
+                                                    </div>
+                                                    <div className={styles.providerDetails}>
+                                                        <div className={styles.providerName}>
+                                                            {llm.name}
+                                                        </div>
+                                                        <div className={styles.providerMeta}>
+                                                            {llm.model}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))
+                                        )}
                                     </div>
                                 </>
                             )}

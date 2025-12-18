@@ -65,6 +65,197 @@ app.get('/api/mcp/tools', async (req, res) => {
 });
 
 // ============================================
+// Models API Endpoints - 動的モデル取得
+// ============================================
+
+interface ModelInfo {
+    id: string;
+    name: string;
+    provider: 'ollama' | 'anthropic' | 'google' | 'openai';
+    model: string;
+    available: boolean;
+}
+
+/** Ollamaモデル一覧取得 */
+async function fetchOllamaModels(): Promise<ModelInfo[]> {
+    const ollamaHost = process.env.OLLAMA_HOST || 'localhost:11434';
+    try {
+        const response = await fetch(`http://${ollamaHost}/api/tags`, {
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) return [];
+
+        const data = await response.json() as { models: Array<{ name: string; model: string }> };
+        return (data.models || []).map(m => ({
+            id: `ollama-${m.name.replace(/[/:]/g, '-')}`,
+            name: m.name,
+            provider: 'ollama' as const,
+            model: m.name,
+            available: true,
+        }));
+    } catch (error) {
+        console.log('[Models] Ollama not available:', (error as Error).message);
+        return [];
+    }
+}
+
+/** Geminiモデル一覧取得 */
+async function fetchGeminiModels(): Promise<ModelInfo[]> {
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+        console.log('[Models] GOOGLE_API_KEY not set, skipping Gemini');
+        return [];
+    }
+
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+            { signal: AbortSignal.timeout(10000) }
+        );
+        if (!response.ok) return [];
+
+        const data = await response.json() as {
+            models: Array<{ name: string; displayName: string; supportedGenerationMethods?: string[] }>
+        };
+
+        // Filter for chat-capable models only
+        const chatModels = (data.models || []).filter(m =>
+            m.supportedGenerationMethods?.includes('generateContent')
+        );
+
+        return chatModels.map(m => {
+            const modelId = m.name.replace('models/', '');
+            return {
+                id: `gemini-${modelId.replace(/[/:]/g, '-')}`,
+                name: m.displayName || modelId,
+                provider: 'google' as const,
+                model: modelId,
+                available: true,
+            };
+        });
+    } catch (error) {
+        console.log('[Models] Gemini API error:', (error as Error).message);
+        return [];
+    }
+}
+
+/** Claudeモデル一覧取得 */
+async function fetchClaudeModels(): Promise<ModelInfo[]> {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+        console.log('[Models] ANTHROPIC_API_KEY not set, skipping Claude');
+        return [];
+    }
+
+    try {
+        const response = await fetch('https://api.anthropic.com/v1/models', {
+            headers: {
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+            },
+            signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) return [];
+
+        const data = await response.json() as { data: Array<{ id: string; display_name?: string }> };
+        return (data.data || []).map(m => ({
+            id: `claude-${m.id.replace(/[/:]/g, '-')}`,
+            name: m.display_name || m.id,
+            provider: 'anthropic' as const,
+            model: m.id,
+            available: true,
+        }));
+    } catch (error) {
+        console.log('[Models] Claude API error:', (error as Error).message);
+        return [];
+    }
+}
+
+/** OpenAIモデル一覧取得 */
+async function fetchOpenAIModels(): Promise<ModelInfo[]> {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        console.log('[Models] OPENAI_API_KEY not set, skipping OpenAI');
+        return [];
+    }
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+            signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) return [];
+
+        const data = await response.json() as { data: Array<{ id: string; owned_by: string }> };
+        // Filter for GPT models only (exclude embedding, whisper, etc.)
+        const gptModels = (data.data || []).filter(m =>
+            m.id.startsWith('gpt-') || m.id.startsWith('o1') || m.id.startsWith('o3')
+        );
+
+        return gptModels.map(m => ({
+            id: `openai-${m.id.replace(/[/:]/g, '-')}`,
+            name: m.id,
+            provider: 'openai' as const,
+            model: m.id,
+            available: true,
+        }));
+    } catch (error) {
+        console.log('[Models] OpenAI API error:', (error as Error).message);
+        return [];
+    }
+}
+
+/** 全プロバイダーのモデル一覧取得 */
+app.get('/api/models', async (req, res) => {
+    console.log('[Models] Fetching available models...');
+
+    const [ollama, gemini, claude, openai] = await Promise.all([
+        fetchOllamaModels(),
+        fetchGeminiModels(),
+        fetchClaudeModels(),
+        fetchOpenAIModels(),
+    ]);
+
+    const providers = {
+        ollama: { name: 'OLLAMA', available: ollama.length > 0, models: ollama },
+        google: { name: 'GOOGLE', available: gemini.length > 0, models: gemini },
+        anthropic: { name: 'ANTHROPIC', available: claude.length > 0, models: claude },
+        openai: { name: 'OPENAI', available: openai.length > 0, models: openai },
+    };
+
+    console.log(`[Models] Found: Ollama(${ollama.length}), Gemini(${gemini.length}), Claude(${claude.length}), OpenAI(${openai.length})`);
+
+    res.json({ providers });
+});
+
+/** 特定プロバイダーのモデル一覧取得 */
+app.get('/api/models/:provider', async (req, res) => {
+    const { provider } = req.params;
+
+    let models: ModelInfo[] = [];
+    switch (provider) {
+        case 'ollama':
+            models = await fetchOllamaModels();
+            break;
+        case 'google':
+        case 'gemini':
+            models = await fetchGeminiModels();
+            break;
+        case 'anthropic':
+        case 'claude':
+            models = await fetchClaudeModels();
+            break;
+        case 'openai':
+            models = await fetchOpenAIModels();
+            break;
+        default:
+            return res.status(400).json({ error: 'Unknown provider' });
+    }
+
+    res.json({ models });
+});
+
+// ============================================
 // Chat API
 // ============================================
 
