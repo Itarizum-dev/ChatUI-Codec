@@ -31,3 +31,12 @@ Runs on `http://localhost:3002` (or 3000 if available).
 
 The frontend handles the UI and connects to the backend API at `http://localhost:3001/api/chat`.
 The backend handles communications with LLM providers (Ollama, Anthropic, Google).
+
+## Ollama Configuration
+
+By default, the backend connects to Ollama at `localhost:11434`. If you're running the backend inside a devcontainer, you'll need to update the `.env` file:
+
+```bash
+# In backend/.env
+OLLAMA_HOST=host.docker.internal:11434
+```

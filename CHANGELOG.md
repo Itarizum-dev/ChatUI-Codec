@@ -1,5 +1,13 @@
 # CODEC Version History
 
+## v0.7.1 - Ollama Environment Variable Support (2025-12-18)
+- **Backend**: Ollama接続エンドポイントを環境変数化（`OLLAMA_HOST`）し、ローカル実行とdevcontainerの両方に対応
+  - デフォルト: `localhost:11434`（ローカル実行時）
+  - devcontainer: `host.docker.internal:11434`（.envで設定）
+- **Config**: `.env.example`に`OLLAMA_HOST`変数を追加し、使用例とコメントを記載
+- **Docs**: `README.md`にdevcontainer使用時のOllama設定手順を追記
+- **Fix**: ハードコードされていた`host.docker.internal:11434`を削除し、環境に応じた柔軟な設定を実現
+
 ## v0.7.0 - GitHub Private Repository & Env Setup (2025-12-18)
 - **Git**: GitHubの非公開リポジトリ (`Itarizum-dev/ChatUI-Codec`) での管理を開始
 - **Docs**: 初回セットアップ用の `.env.example` を追加し、README に環境変数設定手順を追記
