@@ -89,8 +89,8 @@ export default function CodecPage() {
             },
         ]);
 
-        // Connection Timeout Logic
-        const CONNECTION_TIMEOUT = 2000;
+        // Connection Timeout Logic - 30s to allow for model loading (especially Ollama)
+        const CONNECTION_TIMEOUT = 30000;
         const timeoutId = setTimeout(() => {
             console.warn("Backend connection timed out");
             controller.abort("timeout");

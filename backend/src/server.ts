@@ -346,9 +346,60 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         const body: ChatRequest = req.body;
         const { message, providerId, context, systemPrompt, useMcp } = body;
 
-        const provider = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
+        // First try static providers
+        let provider = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
+
+        // If not found, try to resolve dynamically from providerId
+        if (!provider && providerId) {
+            // Parse providerId format: {provider}-{model} e.g., "gemini-gemini-2.5-flash", "ollama-llama3.2"
+            let providerType: 'ollama' | 'anthropic' | 'google' | 'openai' | undefined;
+            let modelName: string | undefined;
+
+            if (providerId.startsWith('gemini-') || providerId.startsWith('google-')) {
+                providerType = 'google';
+                modelName = providerId.replace(/^(gemini|google)-/, '');
+            } else if (providerId.startsWith('claude-') || providerId.startsWith('anthropic-')) {
+                providerType = 'anthropic';
+                modelName = providerId.replace(/^(claude|anthropic)-/, '');
+            } else if (providerId.startsWith('ollama-')) {
+                providerType = 'ollama';
+                // Model names like "gpt-oss:20b" become "ollama-gpt-oss-20b" in ID
+                // We need to convert the LAST hyphen back to colon (for tag)
+                const rawModel = providerId.replace(/^ollama-/, '');
+                // Find last hyphen and convert to colon (for version tag like :20b)
+                const lastHyphenIndex = rawModel.lastIndexOf('-');
+                if (lastHyphenIndex > 0) {
+                    modelName = rawModel.substring(0, lastHyphenIndex) + ':' + rawModel.substring(lastHyphenIndex + 1);
+                } else {
+                    modelName = rawModel;
+                }
+            } else if (providerId.startsWith('openai-')) {
+                providerType = 'openai';
+                modelName = providerId.replace(/^openai-/, '');
+            }
+
+            if (providerType && modelName) {
+                const ollamaHost = process.env.OLLAMA_HOST || 'localhost:11434';
+                provider = {
+                    id: providerId,
+                    name: modelName,
+                    type: providerType,
+                    model: modelName,
+                    endpoint: providerType === 'ollama'
+                        ? `http://${ollamaHost}`
+                        : providerType === 'anthropic'
+                            ? 'https://api.anthropic.com/v1/messages'
+                            : providerType === 'google'
+                                ? 'https://generativelanguage.googleapis.com/v1beta/models'
+                                : 'https://api.openai.com/v1',
+                };
+                console.log(`[Chat] Dynamically resolved provider: ${JSON.stringify(provider)}`);
+            }
+        }
+
         if (!provider) {
-            res.write(JSON.stringify({ error: 'Provider not found' }) + '\n');
+            console.error(`[Chat] Provider not found: ${providerId}`);
+            res.write(JSON.stringify({ error: `Provider not found: ${providerId}` }) + '\n');
             res.end();
             return;
         }

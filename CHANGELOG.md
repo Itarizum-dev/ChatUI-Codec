@@ -1,5 +1,14 @@
 # CODEC Version History
 
+## v0.8.1 - Dynamic Model ID Resolution Fix (2025-12-18)
+- **Fix**: 動的に取得したモデルIDでのチャットが動作しない問題を修正
+  - バックエンドでproviderIdから動的にプロバイダー設定を解決するロジックを追加
+  - Gemini: `gemini-gemini-2.5-flash` 形式のIDを正しく処理
+  - Ollama: `ollama-gpt-oss-20b` → `gpt-oss:20b` への変換を修正
+- **Fix**: フロントエンドの接続タイムアウトを2秒→30秒に延長
+  - Ollamaの初回モデルロード時のタイムアウトを防止
+- **Demo**: デモ動画を追加 ([docs/assets/codec_demo_v0.8.1.webp](docs/assets/codec_demo_v0.8.1.webp))
+
 ## v0.8.0 - Dynamic LLM Model Selection (2025-12-18)
 - **Feature**: LLMモデル一覧を動的に取得する機能を追加
   - Ollama: ローカルにインストールされたモデルを自動検出
