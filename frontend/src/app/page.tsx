@@ -7,6 +7,8 @@ import { PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, fetchAvailableMode
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import McpSettingsModal from '@/components/McpSettingsModal';
+import { CodeBlock } from '@/components/CodeBlock';
+import { useCodecSound } from '@/hooks/useCodecSound';
 
 export default function CodecPage() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -17,10 +19,21 @@ export default function CodecPage() {
     // Modal for LLM only now
     const [showSelector, setShowSelector] = useState(false);
     const [selectedService, setSelectedService] = useState<string | null>(null);
+
     // MCP state
     const [useMcp, setUseMcp] = useState(false);
     const [showMcpSettings, setShowMcpSettings] = useState(false);
     const [toolStatus, setToolStatus] = useState<string | null>(null);
+
+    // Sound
+    const { playTypeSound, playCallSound, toggleMute } = useCodecSound();
+    const [isMuted, setIsMuted] = useState(false);
+
+    const handleMuteToggle = () => {
+        const newState = !isMuted;
+        setIsMuted(newState);
+        toggleMute(newState);
+    };
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -58,8 +71,42 @@ export default function CodecPage() {
         refreshModels();
     }, [refreshModels]);
 
+    // History persistence
+    useEffect(() => {
+        const saved = localStorage.getItem('codec-history');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                const restored = parsed.map((m: any) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp)
+                }));
+                setMessages(restored);
+            } catch (e) {
+                console.error("Failed to load history", e);
+            }
+        }
+        // Play Open Sound on load (interaction required usually, but try)
+        // playOpenSound(); 
+    }, []);
+
+    useEffect(() => {
+        if (messages.length > 0) {
+            localStorage.setItem('codec-history', JSON.stringify(messages));
+        }
+    }, [messages]);
+
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
+
+        // Command: Clear history
+        if (input.trim() === '/clear') {
+            setMessages([]);
+            localStorage.removeItem('codec-history');
+            setInput("");
+            playTypeSound();
+            return;
+        }
 
         const userMessage: Message = {
             id: crypto.randomUUID(),
@@ -127,6 +174,9 @@ export default function CodecPage() {
 
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split('\n').filter(Boolean);
+
+                // Play typing sound on data receive
+                playTypeSound();
 
                 for (const line of lines) {
                     try {
@@ -313,7 +363,18 @@ export default function CodecPage() {
                             </div>
                             <div className={styles.dataRow}>
                                 <span>MUTE</span>
-                                <span>OFF</span>
+                                <span
+                                    onClick={handleMuteToggle}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: isMuted ? 'var(--codec-green-bright)' : 'var(--codec-green-dark)',
+                                        fontWeight: isMuted ? 'bold' : 'normal',
+                                        textDecoration: 'underline'
+                                    }}
+                                    title="Toggle Sound"
+                                >
+                                    {isMuted ? 'ON' : 'OFF'}
+                                </span>
                             </div>
                             <div className={styles.dataRow}>
                                 <span>SIGNAL</span>
@@ -366,14 +427,10 @@ export default function CodecPage() {
                                                     code({ node, inline, className, children, ...props }: any) {
                                                         const match = /language-(\w+)/.exec(className || '')
                                                         return !inline && match ? (
-                                                            <div className="code-block-wrapper">
-                                                                <div className="code-block-header">
-                                                                    <span>{match[1]}</span>
-                                                                </div>
-                                                                <code className={className} {...props}>
-                                                                    {children}
-                                                                </code>
-                                                            </div>
+                                                            <CodeBlock
+                                                                language={match[1]}
+                                                                value={String(children).replace(/\n$/, '')}
+                                                            />
                                                         ) : (
                                                             <code className={className} {...props}>
                                                                 {children}
