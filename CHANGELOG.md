@@ -1,5 +1,8 @@
 # CODEC Version History
 
+## v0.7.0 - GitHub Private Repository (2025-12-18)
+- **Git**: GitHubの非公開リポジトリ (`Itarizum-dev/ChatUI-Codec`) での管理を開始
+
 ## v0.6.1 - Stability & IME Fix (2025-12-15)
 - **Backend**: OllamaなどのLLM応答待ち時にKeep-Alive Ping (15秒毎) とタイムアウト (5分) を導入し、接続切れを防止
 - **Frontend**: 日本語入力 (IME) 確定時のEnterキーによる意図しないメッセージ送信を修正
