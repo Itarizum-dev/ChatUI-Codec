@@ -88,11 +88,12 @@ export class SkillManager {
     /**
      * 利用可能なスキルのメタデータリストを取得（Discovery用）
      */
-    async getAvailableSkills(): Promise<Array<{ name: string; description: string }>> {
+    async getAvailableSkills(): Promise<Array<{ name: string; description: string; path: string }>> {
         const skills = await this.loadAllSkills();
         return skills.map(s => ({
             name: s.name,
-            description: s.metadata.description
+            description: s.metadata.description,
+            path: s.path
         }));
     }
 

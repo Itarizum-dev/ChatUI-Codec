@@ -8,6 +8,7 @@ import { McpManager } from './mcp/McpManager'; // Changed import for McpManager 
 import { SkillManager } from './skills/skillManager'; // Added SkillManager import
 import { SkillCreator } from './skills/skillCreator'; // Added SkillCreator import
 import { McpServerConfig, McpTool } from './mcp/types';
+import { BUILTIN_TOOLS, findBuiltinTool, BuiltinTool } from './tools/builtinTools';
 
 dotenv.config();
 
@@ -346,6 +347,15 @@ const toClaudeTools = (tools: McpTool[]) => {
     }));
 };
 
+// Convert built-in tools to Claude format (no serverName prefix)
+const builtinToClaudeTools = (tools: BuiltinTool[]) => {
+    return tools.map(t => ({
+        name: t.name,
+        description: t.description,
+        input_schema: t.parameters,
+    }));
+};
+
 // Convert MCP tools to Gemini format
 const toGeminiTools = (tools: McpTool[]) => {
     return [{
@@ -357,6 +367,15 @@ const toGeminiTools = (tools: McpTool[]) => {
     }];
 };
 
+// Convert built-in tools to Gemini format
+const builtinToGeminiDeclarations = (tools: BuiltinTool[]) => {
+    return tools.map(t => ({
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters,
+    }));
+};
+
 // Convert MCP tools to OpenAI/Ollama format
 const toOllamaTools = (tools: McpTool[]) => {
     return tools.map(t => ({
@@ -365,6 +384,18 @@ const toOllamaTools = (tools: McpTool[]) => {
             name: `${t.serverName}__${t.name}`,
             description: t.description || '',
             parameters: cleanSchema(t.inputSchema),
+        }
+    }));
+};
+
+// Convert built-in tools to Ollama format
+const builtinToOllamaTools = (tools: BuiltinTool[]) => {
+    return tools.map(t => ({
+        type: 'function',
+        function: {
+            name: t.name,
+            description: t.description,
+            parameters: t.parameters,
         }
     }));
 };
@@ -415,13 +446,14 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         const skills = await skillManager.getAvailableSkills();
         if (skills.length > 0) {
             const skillsXml = skills.map(s =>
-                `  <skill>\n    <name>${s.name}</name>\n    <description>${s.description}</description>\n  </skill>`
+                `  <skill>\n    <name>${s.name}</name>\n    <description>${s.description}</description>\n    <location>${s.path}/SKILL.md</location>\n  </skill>`
             ).join('\n');
 
             enhancedSystemPrompt += `\n\n<available_skills>\n${skillsXml}\n</available_skills>\n\n` +
                 `The above skills are available in the system. You are an AI Agent capable of using these skills to help the user.\n` +
-                `When a user asks for a task that matches a skill, you should verify the skill instructions and follow them.\n` +
-                `To read a skill's instructions, use the filesystem tool to read 'backend/skills/<skill-name>/SKILL.md'.`;
+                `When a user asks for a task that matches a skill, you MUST first read the skill instructions using the 'cat' tool.\n` +
+                `Example: To read a skill, call the 'cat' tool with the path from <location>.\n` +
+                `After reading the SKILL.md file, follow its instructions step by step.`;
         }
     } catch (e) {
         console.warn('[Skills] Failed to inject skills into system prompt:', e);
@@ -492,6 +524,10 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         console.log(`[MCP] ${mcpTools.length} tools available`);
     }
 
+    // Built-in tools are always available (lightweight, no MCP overhead)
+    const builtinTools = BUILTIN_TOOLS;
+    console.log(`[Builtin] ${builtinTools.length} tools available`);
+
     let fullContent = '';
     let promptTokens = 0;
     let completionTokens = 0;
@@ -499,19 +535,19 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     try {
         if (provider.type === 'ollama') {
             fullContent = await handleOllamaChat(
-                provider, enhancedSystemPrompt, context, message, mcpTools, res,
+                provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
 
         } else if (provider.type === 'anthropic') {
             fullContent = await handleAnthropicChat(
-                provider, enhancedSystemPrompt, context, message, mcpTools, res,
+                provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
 
         } else if (provider.type === 'google') {
             fullContent = await handleGoogleChat(
-                provider, enhancedSystemPrompt, context, message, mcpTools, res,
+                provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
         }
@@ -550,6 +586,7 @@ async function handleAnthropicChat(
     context: import('./types').Message[] | undefined,
     message: string,
     mcpTools: McpTool[],
+    builtinTools: BuiltinTool[],
     res: Response,
     setTokens: (prompt: number, completion: number) => void
 ): Promise<string> {
@@ -574,8 +611,13 @@ async function handleAnthropicChat(
             stream: false, // Non-streaming for tool loop simplicity
         };
 
-        if (mcpTools.length > 0) {
-            requestBody.tools = toClaudeTools(mcpTools);
+        // Combine MCP tools and built-in tools for LLM
+        const allTools = [
+            ...toClaudeTools(mcpTools),
+            ...builtinToClaudeTools(builtinTools)
+        ];
+        if (allTools.length > 0) {
+            requestBody.tools = allTools;
         }
 
         const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -616,20 +658,30 @@ async function handleAnthropicChat(
             const toolResults: Array<{ type: string; tool_use_id: string; content: string }> = [];
 
             for (const block of toolUseBlocks) {
-                console.log(`[MCP] Tool call received: ${block.name}`, JSON.stringify(block.input));
-                const [serverName, toolName] = (block.name || '').split('__');
-
-                if (!serverName || !toolName) {
-                    console.error(`[MCP] Invalid tool name format: ${block.name}`);
-                    continue;
-                }
+                console.log(`[Tool] Tool call received: ${block.name}`, JSON.stringify(block.input));
 
                 res.write(JSON.stringify({ toolCall: { name: block.name, args: block.input } }) + '\n');
 
-                console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
-                const toolResult = await mcpManager.callTool(serverName, toolName, block.input || {});
-                console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
-                const resultText = toolResult.content.map(c => c.text || '').join('\n');
+                let resultText: string;
+
+                // First, check if it's a built-in tool (no __ prefix)
+                const builtinTool = findBuiltinTool(block.name || '');
+                if (builtinTool) {
+                    console.log(`[Builtin] Executing ${block.name}...`);
+                    resultText = await builtinTool.execute(block.input as Record<string, unknown> || {});
+                } else {
+                    // MCP tool: parse serverName__toolName format
+                    const [serverName, toolName] = (block.name || '').split('__');
+                    if (!serverName || !toolName) {
+                        console.error(`[MCP] Invalid tool name format: ${block.name}`);
+                        resultText = `Error: Invalid tool name format: ${block.name}`;
+                    } else {
+                        console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
+                        const toolResult = await mcpManager.callTool(serverName, toolName, block.input || {});
+                        console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
+                        resultText = toolResult.content.map(c => c.text || '').join('\n');
+                    }
+                }
 
                 toolResults.push({
                     type: 'tool_result',
@@ -668,6 +720,7 @@ async function handleGoogleChat(
     context: import('./types').Message[] | undefined,
     message: string,
     mcpTools: McpTool[],
+    builtinTools: BuiltinTool[],
     res: Response,
     setTokens: (prompt: number, completion: number) => void
 ): Promise<string> {
@@ -694,8 +747,12 @@ async function handleGoogleChat(
             generationConfig: { maxOutputTokens: 4096 },
         };
 
-        if (mcpTools.length > 0) {
-            requestBody.tools = toGeminiTools(mcpTools);
+        // Combine MCP tools and built-in tools for LLM
+        const mcpDeclarations = mcpTools.length > 0 ? toGeminiTools(mcpTools)[0].function_declarations : [];
+        const builtinDeclarations = builtinToGeminiDeclarations(builtinTools);
+        const allDeclarations = [...mcpDeclarations, ...builtinDeclarations];
+        if (allDeclarations.length > 0) {
+            requestBody.tools = [{ function_declarations: allDeclarations }];
         }
 
         const response = await fetch(
@@ -740,20 +797,30 @@ async function handleGoogleChat(
 
             for (const part of functionCalls) {
                 const fc = part.functionCall!;
-                console.log(`[MCP] Tool call received (Gemini): ${fc.name}`, JSON.stringify(fc.args));
-
-                const [serverName, toolName] = fc.name.split('__');
-                if (!serverName || !toolName) {
-                    console.error(`[MCP] Invalid tool name format: ${fc.name}`);
-                    continue;
-                }
+                console.log(`[Tool] Tool call received (Gemini): ${fc.name}`, JSON.stringify(fc.args));
 
                 res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.args } }) + '\n');
 
-                console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
-                const toolResult = await mcpManager.callTool(serverName, toolName, fc.args);
-                console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
-                const resultText = toolResult.content.map(c => c.text || '').join('\n');
+                let resultText: string;
+
+                // First, check if it's a built-in tool (no __ prefix)
+                const builtinTool = findBuiltinTool(fc.name);
+                if (builtinTool) {
+                    console.log(`[Builtin] Executing ${fc.name}...`);
+                    resultText = await builtinTool.execute(fc.args as Record<string, unknown> || {});
+                } else {
+                    // MCP tool: parse serverName__toolName format
+                    const [serverName, toolName] = fc.name.split('__');
+                    if (!serverName || !toolName) {
+                        console.error(`[MCP] Invalid tool name format: ${fc.name}`);
+                        resultText = `Error: Invalid tool name format: ${fc.name}`;
+                    } else {
+                        console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
+                        const toolResult = await mcpManager.callTool(serverName, toolName, fc.args);
+                        console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
+                        resultText = toolResult.content.map(c => c.text || '').join('\n');
+                    }
+                }
 
                 functionResponses.push({
                     functionResponse: {
@@ -816,6 +883,7 @@ async function handleOllamaChat(
     context: import('./types').Message[] | undefined,
     message: string,
     mcpTools: McpTool[],
+    builtinTools: BuiltinTool[],
     res: Response,
     setTokens: (prompt: number, completion: number) => void
 ): Promise<string> {
@@ -837,8 +905,13 @@ async function handleOllamaChat(
             stream: false, // Using non-streaming for tool loop simplicity
         };
 
-        if (mcpTools.length > 0) {
-            requestBody.tools = toOllamaTools(mcpTools);
+        // Combine MCP tools and built-in tools for LLM
+        const allTools = [
+            ...toOllamaTools(mcpTools),
+            ...builtinToOllamaTools(builtinTools)
+        ];
+        if (allTools.length > 0) {
+            requestBody.tools = allTools;
         }
 
         // --- Keep-Alive & Timeout Logic for Ollama ---
@@ -923,21 +996,30 @@ async function handleOllamaChat(
 
             for (const toolCall of responseMessage.tool_calls) {
                 const fc = toolCall.function;
-                console.log(`[MCP] Tool call received (Ollama): ${fc.name}`, JSON.stringify(fc.arguments));
-
-                const [serverName, toolName] = fc.name.split('__');
-                if (!serverName || !toolName) {
-                    console.error(`[MCP] Invalid tool name format: ${fc.name}`);
-                    continue;
-                }
+                console.log(`[Tool] Tool call received (Ollama): ${fc.name}`, JSON.stringify(fc.arguments));
 
                 res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.arguments } }) + '\n');
 
-                console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
-                const toolResult = await mcpManager.callTool(serverName, toolName, fc.arguments);
-                console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
+                let resultText: string;
 
-                const resultText = toolResult.content.map(c => c.text || '').join('\n');
+                // First, check if it's a built-in tool (no __ prefix)
+                const builtinTool = findBuiltinTool(fc.name);
+                if (builtinTool) {
+                    console.log(`[Builtin] Executing ${fc.name}...`);
+                    resultText = await builtinTool.execute(fc.arguments as Record<string, unknown> || {});
+                } else {
+                    // MCP tool: parse serverName__toolName format
+                    const [serverName, toolName] = fc.name.split('__');
+                    if (!serverName || !toolName) {
+                        console.error(`[MCP] Invalid tool name format: ${fc.name}`);
+                        resultText = `Error: Invalid tool name format: ${fc.name}`;
+                    } else {
+                        console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
+                        const toolResult = await mcpManager.callTool(serverName, toolName, fc.arguments);
+                        console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
+                        resultText = toolResult.content.map(c => c.text || '').join('\n');
+                    }
+                }
 
                 // Respond with tool result
                 messages.push({
