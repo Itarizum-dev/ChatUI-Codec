@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## v0.6.5 - Native Cat Tool & Skill Reading (2025-12-27)
+- **Feature**: AIがスキル定義ファイル (`SKILL.md`) を読み取るための `cat` ツールを実装
+- **Backend**: MCPツールとは独立した、軽量なネイティブツールシステム (`builtinTools.ts`) を導入
+  - コンテキスト効率化のため、`builtin__` プレフィックスを排除し `cat` として呼び出し可能に
+- **SkillManager**: スキル一覧プロンプトに各スキルのファイルパス (`<location>`) を追加し、AIが正確にファイルを参照できるように改善
+- **Support**: Anthropic (Claude), Google (Gemini), Ollama の全ハンドラでネイティブツールに対応
+
 ## v0.6.2 - Pre-Agent Skills Integration (2025-12-27)
 - **Maintenance**: Agent Skills統合前の現状保存
 - **Repo**: anthropics/skillsリポジトリからのSkill Creator統合準備
