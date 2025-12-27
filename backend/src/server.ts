@@ -409,6 +409,24 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     const body: ChatRequest = req.body;
     const { message, providerId, context, systemPrompt, useMcp } = body;
 
+    // Inject available skills into system prompt
+    let enhancedSystemPrompt = systemPrompt || '';
+    try {
+        const skills = await skillManager.getAvailableSkills();
+        if (skills.length > 0) {
+            const skillsXml = skills.map(s =>
+                `  <skill>\n    <name>${s.name}</name>\n    <description>${s.description}</description>\n  </skill>`
+            ).join('\n');
+
+            enhancedSystemPrompt += `\n\n<available_skills>\n${skillsXml}\n</available_skills>\n\n` +
+                `The above skills are available in the system. You are an AI Agent capable of using these skills to help the user.\n` +
+                `When a user asks for a task that matches a skill, you should verify the skill instructions and follow them.\n` +
+                `To read a skill's instructions, use the filesystem tool to read 'backend/skills/<skill-name>/SKILL.md'.`;
+        }
+    } catch (e) {
+        console.warn('[Skills] Failed to inject skills into system prompt:', e);
+    }
+
     // First try static providers
     let provider = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
 
@@ -481,19 +499,19 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     try {
         if (provider.type === 'ollama') {
             fullContent = await handleOllamaChat(
-                provider, systemPrompt, context, message, mcpTools, res,
+                provider, enhancedSystemPrompt, context, message, mcpTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
 
         } else if (provider.type === 'anthropic') {
             fullContent = await handleAnthropicChat(
-                provider, systemPrompt, context, message, mcpTools, res,
+                provider, enhancedSystemPrompt, context, message, mcpTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
 
         } else if (provider.type === 'google') {
             fullContent = await handleGoogleChat(
-                provider, systemPrompt, context, message, mcpTools, res,
+                provider, enhancedSystemPrompt, context, message, mcpTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
         }
