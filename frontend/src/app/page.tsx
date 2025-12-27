@@ -7,11 +7,15 @@ import { PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, fetchAvailableMode
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import McpSettingsModal from '@/components/McpSettingsModal';
+import SkillList from '@/components/skills/SkillList';
+import SkillDetailModal from '@/components/skills/SkillDetailModal';
 
 export default function CodecPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'contacts' | 'skills'>('contacts');
+    const [viewingSkill, setViewingSkill] = useState<string | null>(null);
     const [currentPersona, setCurrentPersona] = useState<Persona>(DEFAULT_PERSONA);
     const [currentLLM, setCurrentLLM] = useState<LLMProvider>(DEFAULT_LLM);
     // Modal for LLM only now
@@ -441,27 +445,57 @@ export default function CodecPage() {
 
                 {/* Right Panel - Character List & Token Info */}
                 <aside className={styles.codecContactPanel}>
-                    <div className={styles.contactListTitle}>FREQUENCY LIST</div>
-
-                    {PERSONAS.map((persona) => (
-                        <div
-                            key={persona.id}
-                            className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
-                            onClick={() => setCurrentPersona(persona)}
+                    <div className={styles.contactListTitle}>
+                        <span
+                            style={{
+                                cursor: 'pointer',
+                                color: activeTab === 'contacts' ? 'var(--codec-green-bright)' : 'var(--codec-green-dark)',
+                                opacity: activeTab === 'contacts' ? 1 : 0.7,
+                                marginRight: '8px',
+                                textShadow: activeTab === 'contacts' ? '0 0 8px rgba(0, 255, 65, 0.4)' : 'none'
+                            }}
+                            onClick={() => setActiveTab('contacts')}
                         >
-                            <div className={styles.contactIcon}>
-                                {persona.portraitUrl ? (
-                                    <img src={persona.portraitUrl} alt={persona.codename} />
-                                ) : (
-                                    persona.codename[0]
-                                )}
+                            CONTACTS
+                        </span>
+                        /
+                        <span
+                            style={{
+                                cursor: 'pointer',
+                                color: activeTab === 'skills' ? 'var(--codec-green-bright)' : 'var(--codec-green-dark)',
+                                opacity: activeTab === 'skills' ? 1 : 0.7,
+                                marginLeft: '8px',
+                                textShadow: activeTab === 'skills' ? '0 0 8px rgba(0, 255, 65, 0.4)' : 'none'
+                            }}
+                            onClick={() => setActiveTab('skills')}
+                        >
+                            SKILLS
+                        </span>
+                    </div>
+
+                    {activeTab === 'contacts' ? (
+                        PERSONAS.map((persona) => (
+                            <div
+                                key={persona.id}
+                                className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
+                                onClick={() => setCurrentPersona(persona)}
+                            >
+                                <div className={styles.contactIcon}>
+                                    {persona.portraitUrl ? (
+                                        <img src={persona.portraitUrl} alt={persona.codename} />
+                                    ) : (
+                                        persona.codename[0]
+                                    )}
+                                </div>
+                                <div className={styles.contactInfoMini}>
+                                    <div className={styles.contactName}>{persona.codename}</div>
+                                    <div className={styles.contactFreq}>{persona.frequency}</div>
+                                </div>
                             </div>
-                            <div className={styles.contactInfoMini}>
-                                <div className={styles.contactName}>{persona.codename}</div>
-                                <div className={styles.contactFreq}>{persona.frequency}</div>
-                            </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        <SkillList onSelectSkill={setViewingSkill} />
+                    )}
 
                     <div className={styles.panelFooter}>
                         <div className={styles.debugPanel}>
@@ -639,6 +673,12 @@ export default function CodecPage() {
                 isOpen={showMcpSettings}
                 onClose={() => setShowMcpSettings(false)}
                 backendUrl={BACKEND_URL}
+            />
+
+            {/* Skill Detail Modal */}
+            <SkillDetailModal
+                skillName={viewingSkill}
+                onClose={() => setViewingSkill(null)}
             />
         </>
     );

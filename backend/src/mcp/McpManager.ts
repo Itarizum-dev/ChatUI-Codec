@@ -7,8 +7,6 @@ import { McpSettings, McpServerConfig, McpServerInfo, McpTool, McpToolResult, Mc
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SETTINGS_PATH = path.join(__dirname, '../../data/mcp-settings.json');
-
 interface ServerConnection {
     client: Client;
     transport: StdioClientTransport;
@@ -17,9 +15,14 @@ interface ServerConnection {
 }
 
 export class McpManager {
+    private settingsPath: string;
     private settings: McpSettings = { mcpServers: {} };
     private connections: Map<string, ServerConnection> = new Map();
     private toolCache: Map<string, McpTool[]> = new Map();
+
+    constructor(settingsPath?: string) {
+        this.settingsPath = settingsPath || path.join(__dirname, '../../data/mcp-settings.json');
+    }
 
     /**
      * 設定を読み込み、全サーバーに接続
@@ -50,8 +53,8 @@ export class McpManager {
      */
     private loadSettings(): void {
         try {
-            if (fs.existsSync(SETTINGS_PATH)) {
-                const data = fs.readFileSync(SETTINGS_PATH, 'utf-8');
+            if (fs.existsSync(this.settingsPath)) {
+                const data = fs.readFileSync(this.settingsPath, 'utf-8');
                 this.settings = JSON.parse(data);
             }
         } catch (e) {
@@ -65,11 +68,11 @@ export class McpManager {
      */
     private saveSettings(): void {
         try {
-            const dir = path.dirname(SETTINGS_PATH);
+            const dir = path.dirname(this.settingsPath);
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-            fs.writeFileSync(SETTINGS_PATH, JSON.stringify(this.settings, null, 2));
+            fs.writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2));
         } catch (e) {
             console.error('[MCP] Failed to save settings:', e);
         }

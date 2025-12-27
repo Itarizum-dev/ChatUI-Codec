@@ -1,0 +1,82 @@
+/* SkillList.module.css */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
+.skillItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(0, 20, 10, 0.5);
+    border: 1px solid var(--codec-green-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.skillItem:hover {
+    background: rgba(0, 50, 25, 0.5);
+    border-color: var(--codec-green-mid);
+    transform: translateX(-2px);
+}
+
+.skillIcon {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--codec-green-dark);
+    background: rgba(0, 10, 5, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--codec-green-mid);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.skillItem:hover .skillIcon {
+    border-color: var(--codec-green-mid);
+    color: var(--codec-green-bright);
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.2);
+}
+
+.skillInfo {
+    flex: 1;
+    overflow: hidden;
+}
+
+.skillName {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    color: var(--codec-green-bright);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.skillDescription {
+    font-size: 0.6rem;
+    color: var(--codec-green-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--codec-green-mid);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+}
+
+.empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--codec-green-dim);
+    font-size: 0.7rem;
+}

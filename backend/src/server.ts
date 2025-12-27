@@ -1,9 +1,12 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path'; // Added path import
 import { ChatRequest, ChatResponse, MessageMetadata } from './types';
 import { DEFAULT_PROVIDERS, PERSONAS } from './config';
-import { mcpManager } from './mcp/McpManager';
+import { McpManager } from './mcp/McpManager'; // Changed import for McpManager class
+import { SkillManager } from './skills/skillManager'; // Added SkillManager import
+import { SkillCreator } from './skills/skillCreator'; // Added SkillCreator import
 import { McpServerConfig, McpTool } from './mcp/types';
 
 dotenv.config();
@@ -17,6 +20,11 @@ console.log('====================================');
 
 app.use(cors());
 app.use(express.json());
+
+// Initialize MCP Manager, Skill Manager, and Skill Creator
+const mcpManager = new McpManager(path.join(__dirname, '../data/mcp-settings.json'));
+const skillManager = new SkillManager(path.join(__dirname, '../skills'));
+const skillCreator = new SkillCreator(skillManager);
 
 app.get('/', (req, res) => {
     res.json({ status: 'ok', service: 'Codec Backend', version: '0.6.1' });
@@ -257,6 +265,58 @@ app.get('/api/models/:provider', async (req, res) => {
     }
 
     res.json({ models });
+});
+
+// ============================================
+// Skills API Endpoints
+// ============================================
+
+/** 全スキル一覧取得 */
+app.get('/api/skills', async (req, res) => {
+    try {
+        const skills = await skillManager.getAvailableSkills();
+        res.json({ skills });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/** 特定スキル詳細取得 */
+app.get('/api/skills/:name', async (req, res) => {
+    try {
+        const { name } = req.params;
+        const skill = await skillManager.getSkill(name);
+        if (!skill) {
+            return res.status(404).json({ error: 'Skill not found' });
+        }
+        res.json({ skill });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/** 新規スキル初期化（Creator用） */
+app.post('/api/skills/init', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Name is required' });
+        const result = await skillCreator.initSkill(name);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+/** スキル検証（Creator用） */
+app.post('/api/skills/validate', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Name is required' });
+        const result = await skillCreator.validateSkill(name);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ============================================
@@ -710,9 +770,13 @@ async function handleGoogleChat(
 // Server Startup
 // ============================================
 async function startServer() {
-    // Initialize MCP Manager
+    // MCP Manager Initialization
     await mcpManager.initialize();
     console.log('[MCP] Manager initialized');
+
+    // Skill Manager Initialization
+    await skillManager.initialize();
+    console.log('[Skills] Manager initialized');
 
     app.listen(PORT, () => {
         console.log(`Backend server is running on port ${PORT}`);
