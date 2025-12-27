@@ -11,6 +11,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+console.log('====================================');
+console.log('  CODEC BACKEND REFRESHED (v0.8.3)  ');
+console.log('====================================');
+
 app.use(cors());
 app.use(express.json());
 
@@ -342,79 +346,79 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     // Send immediate ping to confirm connection
     res.write(JSON.stringify({ type: 'ping' }) + '\n');
 
+    const body: ChatRequest = req.body;
+    const { message, providerId, context, systemPrompt, useMcp } = body;
+
+    // First try static providers
+    let provider = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
+
+    // If not found, try to resolve dynamically from providerId
+    if (!provider && providerId) {
+        // Parse providerId format: {provider}-{model} e.g., "gemini-gemini-2.5-flash", "ollama-llama3.2"
+        let providerType: 'ollama' | 'anthropic' | 'google' | 'openai' | undefined;
+        let modelName: string | undefined;
+
+        if (providerId.startsWith('gemini-') || providerId.startsWith('google-')) {
+            providerType = 'google';
+            modelName = providerId.replace(/^(gemini|google)-/, '');
+        } else if (providerId.startsWith('claude-') || providerId.startsWith('anthropic-')) {
+            providerType = 'anthropic';
+            modelName = providerId.replace(/^(claude|anthropic)-/, '');
+        } else if (providerId.startsWith('ollama-')) {
+            providerType = 'ollama';
+            // Model names like "gpt-oss:20b" become "ollama-gpt-oss-20b" in ID
+            // We need to convert the LAST hyphen back to colon (for tag)
+            const rawModel = providerId.replace(/^ollama-/, '');
+            // Find last hyphen and convert to colon (for version tag like :20b)
+            const lastHyphenIndex = rawModel.lastIndexOf('-');
+            if (lastHyphenIndex > 0) {
+                modelName = rawModel.substring(0, lastHyphenIndex) + ':' + rawModel.substring(lastHyphenIndex + 1);
+            } else {
+                modelName = rawModel;
+            }
+        } else if (providerId.startsWith('openai-')) {
+            providerType = 'openai';
+            modelName = providerId.replace(/^openai-/, '');
+        }
+
+        if (providerType && modelName) {
+            const ollamaHost = process.env.OLLAMA_HOST || 'localhost:11434';
+            provider = {
+                id: providerId,
+                name: modelName,
+                type: providerType,
+                model: modelName,
+                endpoint: providerType === 'ollama'
+                    ? `http://${ollamaHost}`
+                    : providerType === 'anthropic'
+                        ? 'https://api.anthropic.com/v1/messages'
+                        : providerType === 'google'
+                            ? 'https://generativelanguage.googleapis.com/v1beta/models'
+                            : 'https://api.openai.com/v1',
+            };
+            console.log(`[Chat] Dynamically resolved provider: ${JSON.stringify(provider)}`);
+        }
+    }
+
+    if (!provider) {
+        console.error(`[Chat] Provider not found: ${providerId}`);
+        res.write(JSON.stringify({ error: `Provider not found: ${providerId}` }) + '\n');
+        res.end();
+        return;
+    }
+
+    // Get MCP tools if enabled (supported by Claude, Gemini, and some Ollama models)
+    let mcpTools: McpTool[] = [];
+    if (useMcp) {
+        mcpTools = await mcpManager.getAllTools();
+        console.log(`[MCP] ${mcpTools.length} tools available`);
+    }
+
+    let fullContent = '';
+    let promptTokens = 0;
+    let completionTokens = 0;
+
     try {
-        const body: ChatRequest = req.body;
-        const { message, providerId, context, systemPrompt, useMcp } = body;
-
-        // First try static providers
-        let provider = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
-
-        // If not found, try to resolve dynamically from providerId
-        if (!provider && providerId) {
-            // Parse providerId format: {provider}-{model} e.g., "gemini-gemini-2.5-flash", "ollama-llama3.2"
-            let providerType: 'ollama' | 'anthropic' | 'google' | 'openai' | undefined;
-            let modelName: string | undefined;
-
-            if (providerId.startsWith('gemini-') || providerId.startsWith('google-')) {
-                providerType = 'google';
-                modelName = providerId.replace(/^(gemini|google)-/, '');
-            } else if (providerId.startsWith('claude-') || providerId.startsWith('anthropic-')) {
-                providerType = 'anthropic';
-                modelName = providerId.replace(/^(claude|anthropic)-/, '');
-            } else if (providerId.startsWith('ollama-')) {
-                providerType = 'ollama';
-                // Model names like "gpt-oss:20b" become "ollama-gpt-oss-20b" in ID
-                // We need to convert the LAST hyphen back to colon (for tag)
-                const rawModel = providerId.replace(/^ollama-/, '');
-                // Find last hyphen and convert to colon (for version tag like :20b)
-                const lastHyphenIndex = rawModel.lastIndexOf('-');
-                if (lastHyphenIndex > 0) {
-                    modelName = rawModel.substring(0, lastHyphenIndex) + ':' + rawModel.substring(lastHyphenIndex + 1);
-                } else {
-                    modelName = rawModel;
-                }
-            } else if (providerId.startsWith('openai-')) {
-                providerType = 'openai';
-                modelName = providerId.replace(/^openai-/, '');
-            }
-
-            if (providerType && modelName) {
-                const ollamaHost = process.env.OLLAMA_HOST || 'localhost:11434';
-                provider = {
-                    id: providerId,
-                    name: modelName,
-                    type: providerType,
-                    model: modelName,
-                    endpoint: providerType === 'ollama'
-                        ? `http://${ollamaHost}`
-                        : providerType === 'anthropic'
-                            ? 'https://api.anthropic.com/v1/messages'
-                            : providerType === 'google'
-                                ? 'https://generativelanguage.googleapis.com/v1beta/models'
-                                : 'https://api.openai.com/v1',
-                };
-                console.log(`[Chat] Dynamically resolved provider: ${JSON.stringify(provider)}`);
-            }
-        }
-
-        if (!provider) {
-            console.error(`[Chat] Provider not found: ${providerId}`);
-            res.write(JSON.stringify({ error: `Provider not found: ${providerId}` }) + '\n');
-            res.end();
-            return;
-        }
-
-        // Get MCP tools if enabled (supported by Claude, Gemini, and some Ollama models)
-        let mcpTools: McpTool[] = [];
-        if (useMcp) {
-            mcpTools = await mcpManager.getAllTools();
-            console.log(`[MCP] ${mcpTools.length} tools available`);
-        }
-
-        let fullContent = '';
-        let promptTokens = 0;
-        let completionTokens = 0;
-
         if (provider.type === 'ollama') {
             fullContent = await handleOllamaChat(
                 provider, systemPrompt, context, message, mcpTools, res,
@@ -448,12 +452,12 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         res.end();
 
     } catch (error) {
-        const err = error as Error;
         console.error('Chat API Error:', error);
+        const errMessage = (error as Error).message;
         if (!res.headersSent) {
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ error: errMessage });
         } else {
-            res.write(JSON.stringify({ error: err.message }) + '\n');
+            res.write(JSON.stringify({ error: errMessage }) + '\n');
             res.end();
         }
     }
@@ -508,7 +512,14 @@ async function handleAnthropicChat(
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`Claude error: ${response.status} - ${errText}`);
+            let errorMessage = errText;
+            try {
+                const errJson = JSON.parse(errText);
+                errorMessage = errJson.error?.message || errText;
+            } catch (e) {
+                // Not JSON
+            }
+            throw new Error(`Claude Error (${response.status}): ${errorMessage}`);
         }
 
         const result = await response.json() as {
@@ -620,7 +631,14 @@ async function handleGoogleChat(
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`Gemini error: ${response.status} - ${errText}`);
+            let errorMessage = errText;
+            try {
+                const errJson = JSON.parse(errText);
+                errorMessage = errJson.error?.message || errText;
+            } catch (e) {
+                // Not JSON, use raw text
+            }
+            throw new Error(`Gemini Error (${response.status}): ${errorMessage}`);
         }
 
         const result = await response.json() as {
@@ -784,7 +802,14 @@ async function handleOllamaChat(
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`Ollama error: ${response.status} - ${errText}`);
+            let errorMessage = errText;
+            try {
+                const errJson = JSON.parse(errText);
+                errorMessage = errJson.error || errText;
+            } catch (e) {
+                // Not JSON
+            }
+            throw new Error(`Ollama Error (${response.status}): ${errorMessage}`);
         }
 
         const result = await response.json() as {

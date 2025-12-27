@@ -1,5 +1,10 @@
 # CODEC Version History
 
+## v0.6.2 - Pre-Agent Skills Integration (2025-12-27)
+- **Maintenance**: Agent Skills統合前の現状保存
+- **Repo**: anthropics/skillsリポジトリからのSkill Creator統合準備
+- **Docs**: 実装計画書とタスクリストの作成
+
 ## v0.8.2 - UI Visual Enhancements (2025-12-18)
 - **UI**: 左上タイトルを「SNAKE」から「CODEC」に変更し、デザインを強調
 - **UI**: 左パネル（ME）のポートレートを縮小し、空きスペースにオーディオビジュアライザーとシステムステータス（ENCRYPTION/MUTE/SIGNAL）を追加して情報密度を向上

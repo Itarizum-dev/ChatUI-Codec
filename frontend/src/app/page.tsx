@@ -114,7 +114,10 @@ export default function CodecPage() {
             // Connection established, clear timeout
             clearTimeout(timeoutId);
 
-            if (!response.ok) throw new Error("Transmission failed");
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || "Transmission failed");
+            }
             if (!response.body) throw new Error("No response body");
 
             const reader = response.body.getReader();
@@ -207,7 +210,7 @@ export default function CodecPage() {
             setMessages((prev) =>
                 prev.map((msg) =>
                     msg.id === assistantMessageId
-                        ? { ...msg, content: msg.content + "\n" + errorContent }
+                        ? { ...msg, content: msg.content ? msg.content + "\n" + errorContent : errorContent }
                         : msg
                 )
             );
