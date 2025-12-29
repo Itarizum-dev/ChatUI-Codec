@@ -1,5 +1,16 @@
 # CODEC Version History
 
+## v0.9.2 - Streaming Support for Gemini & Ollama (2025-12-29)
+- **Feature**: Gemini APIでのストリーミング通信を実装
+  - `generateContent` → `streamGenerateContent` (SSE) に変更
+  - リアルタイムでトークンをフロントエンドに送信
+  - Function Call対応を維持
+- **Feature**: Ollama APIでのストリーミング通信を実装
+  - `stream: false` → `stream: true` に変更
+  - NDJSON形式のチャンク処理を実装
+  - Tool Call対応を維持
+
+
 ## v0.6.5 - Native Cat Tool & Skill Reading (2025-12-27)
 - **Feature**: AIがスキル定義ファイル (`SKILL.md`) を読み取るための `cat` ツールを実装
 - **Backend**: MCPツールとは独立した、軽量なネイティブツールシステム (`builtinTools.ts`) を導入

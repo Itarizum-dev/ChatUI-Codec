@@ -742,28 +742,29 @@ async function handleGoogleChat(
     let fullContent = '';
     const MAX_TOOL_ITERATIONS = 10;
 
+    // Combine MCP tools and built-in tools for LLM
+    const mcpDeclarations = mcpTools.length > 0 ? toGeminiTools(mcpTools)[0].function_declarations : [];
+    const builtinDeclarations = builtinToGeminiDeclarations(builtinTools);
+    const allDeclarations = [...mcpDeclarations, ...builtinDeclarations];
+
     for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
         const requestBody: Record<string, unknown> = {
             contents,
             generationConfig: { maxOutputTokens: 4096 },
         };
 
-        // Combine MCP tools and built-in tools for LLM
-        const mcpDeclarations = mcpTools.length > 0 ? toGeminiTools(mcpTools)[0].function_declarations : [];
-        const builtinDeclarations = builtinToGeminiDeclarations(builtinTools);
-        const allDeclarations = [...mcpDeclarations, ...builtinDeclarations];
         if (allDeclarations.length > 0) {
             requestBody.tools = [{ function_declarations: allDeclarations }];
         }
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody),
-            }
-        );
+        // Use streaming endpoint
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:streamGenerateContent?key=${apiKey}&alt=sse`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        });
 
         if (!response.ok) {
             const errText = await response.text();
@@ -777,75 +778,118 @@ async function handleGoogleChat(
             throw new Error(`Gemini Error (${response.status}): ${errorMessage}`);
         }
 
-        const result = await response.json() as {
-            candidates: Array<{
-                content: {
-                    parts: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }>;
-                    role: string;
-                };
-            }>;
-            usageMetadata?: { promptTokenCount: number; candidatesTokenCount: number };
-        };
+        if (response.body) {
+            // Streaming mode: parse SSE chunks
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let promptTokens = 0;
+            let completionTokens = 0;
+            let pendingFunctionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+            let buffer = '';
 
-        setTokens(result.usageMetadata?.promptTokenCount || 0, result.usageMetadata?.candidatesTokenCount || 0);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-        const parts = result.candidates?.[0]?.content?.parts || [];
-        const functionCalls = parts.filter(p => p.functionCall);
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
-        if (functionCalls.length > 0) {
-            // Execute tools
-            const functionResponses: Array<{ functionResponse: { name: string; response: { result: string } } }> = [];
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6);
+                        if (jsonStr.trim() === '[DONE]') continue;
 
-            for (const part of functionCalls) {
-                const fc = part.functionCall!;
-                console.log(`[Tool] Tool call received (Gemini): ${fc.name}`, JSON.stringify(fc.args));
+                        try {
+                            const json = JSON.parse(jsonStr) as {
+                                candidates?: Array<{
+                                    content?: {
+                                        parts?: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }>;
+                                    };
+                                }>;
+                                usageMetadata?: { promptTokenCount: number; candidatesTokenCount: number };
+                            };
 
-                res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.args } }) + '\n');
+                            const parts = json.candidates?.[0]?.content?.parts || [];
+                            for (const part of parts) {
+                                // Stream text content
+                                if (part.text) {
+                                    fullContent += part.text;
+                                    const payload = JSON.stringify({ content: part.text }) + '\n';
+                                    res.write(payload);
+                                }
+                                // Collect function calls
+                                if (part.functionCall) {
+                                    pendingFunctionCalls.push(part.functionCall);
+                                }
+                            }
 
-                let resultText: string;
-
-                // First, check if it's a built-in tool (no __ prefix)
-                const builtinTool = findBuiltinTool(fc.name);
-                if (builtinTool) {
-                    console.log(`[Builtin] Executing ${fc.name}...`);
-                    resultText = await builtinTool.execute(fc.args as Record<string, unknown> || {});
-                } else {
-                    // MCP tool: parse serverName__toolName format
-                    const [serverName, toolName] = fc.name.split('__');
-                    if (!serverName || !toolName) {
-                        console.error(`[MCP] Invalid tool name format: ${fc.name}`);
-                        resultText = `Error: Invalid tool name format: ${fc.name}`;
-                    } else {
-                        console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
-                        const toolResult = await mcpManager.callTool(serverName, toolName, fc.args);
-                        console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
-                        resultText = toolResult.content.map(c => c.text || '').join('\n');
+                            if (json.usageMetadata) {
+                                promptTokens = json.usageMetadata.promptTokenCount || 0;
+                                completionTokens = json.usageMetadata.candidatesTokenCount || 0;
+                            }
+                        } catch (e) {
+                            // Parsing error, skip this line
+                            console.warn('[Gemini] Failed to parse streaming chunk:', (e as Error).message);
+                        }
                     }
                 }
-
-                functionResponses.push({
-                    functionResponse: {
-                        name: fc.name,
-                        response: { result: resultText },
-                    },
-                });
-
-                res.write(JSON.stringify({ toolResult: { name: fc.name, result: resultText.slice(0, 200) } }) + '\n');
             }
 
-            // Add model response and function results
-            contents.push({ role: 'model', parts: parts as unknown as Array<{ text: string }> });
-            contents.push({ role: 'user', parts: functionResponses as unknown as Array<{ text: string }> });
+            setTokens(promptTokens, completionTokens);
 
-        } else {
-            // No function call, extract text and finish
-            for (const part of parts) {
-                if (part.text) {
-                    fullContent += part.text;
-                    res.write(JSON.stringify({ content: part.text }) + '\n');
+            // Process function calls if any
+            if (pendingFunctionCalls.length > 0) {
+                const functionResponses: Array<{ functionResponse: { name: string; response: { result: string } } }> = [];
+                const modelParts: Array<{ functionCall: { name: string; args: Record<string, unknown> } }> = [];
+
+                for (const fc of pendingFunctionCalls) {
+                    console.log(`[Tool] Tool call received (Gemini): ${fc.name}`, JSON.stringify(fc.args));
+
+                    res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.args } }) + '\n');
+
+                    let resultText: string;
+
+                    const builtinTool = findBuiltinTool(fc.name);
+                    if (builtinTool) {
+                        console.log(`[Builtin] Executing ${fc.name}...`);
+                        resultText = await builtinTool.execute(fc.args as Record<string, unknown> || {});
+                    } else {
+                        const [serverName, toolName] = fc.name.split('__');
+                        if (!serverName || !toolName) {
+                            console.error(`[MCP] Invalid tool name format: ${fc.name}`);
+                            resultText = `Error: Invalid tool name format: ${fc.name}`;
+                        } else {
+                            console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
+                            const toolResult = await mcpManager.callTool(serverName, toolName, fc.args);
+                            console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
+                            resultText = toolResult.content.map(c => c.text || '').join('\n');
+                        }
+                    }
+
+                    modelParts.push({ functionCall: fc });
+                    functionResponses.push({
+                        functionResponse: {
+                            name: fc.name,
+                            response: { result: resultText },
+                        },
+                    });
+
+                    res.write(JSON.stringify({ toolResult: { name: fc.name, result: resultText.slice(0, 200) } }) + '\n');
                 }
+
+                // Add model response and function results
+                contents.push({ role: 'model', parts: modelParts as unknown as Array<{ text: string }> });
+                contents.push({ role: 'user', parts: functionResponses as unknown as Array<{ text: string }> });
+
+                // Reset for next iteration
+                fullContent = '';
+                continue;
             }
-            break;
+
+            return fullContent;
+        } else {
+            throw new Error('No response body from Gemini API');
         }
     }
 
@@ -899,147 +943,163 @@ async function handleOllamaChat(
     let fullContent = '';
     const MAX_TOOL_ITERATIONS = 10;
 
+    // Combine MCP tools and built-in tools for LLM
+    const allTools = [
+        ...toOllamaTools(mcpTools),
+        ...builtinToOllamaTools(builtinTools)
+    ];
+
     for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
         const requestBody: Record<string, unknown> = {
             model: provider.model,
             messages,
-            stream: false, // Using non-streaming for tool loop simplicity
+            stream: true, // Enable streaming
         };
 
-        // Combine MCP tools and built-in tools for LLM
-        const allTools = [
-            ...toOllamaTools(mcpTools),
-            ...builtinToOllamaTools(builtinTools)
-        ];
         if (allTools.length > 0) {
             requestBody.tools = allTools;
         }
 
         // --- Keep-Alive & Timeout Logic for Ollama ---
-        // Creating a promise that wraps the fetch with timeout and keep-alive pings
         const LLM_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-        const KEEP_ALIVE_INTERVAL = 15000; // 15 seconds
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+        }, LLM_TIMEOUT);
 
-        const fetchPromise = new Promise<any>(async (resolve, reject) => {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => {
-                controller.abort();
-                reject(new Error('LLM Timeout: 5 minutes exceeded'));
-            }, LLM_TIMEOUT);
-
-            // Keep-Alive Ping Interval
-            const pingInterval = setInterval(() => {
-                if (!res.headersSent || res.writableEnded) {
-                    clearInterval(pingInterval);
-                    return;
-                }
-                res.write(JSON.stringify({ type: 'ping' }) + '\n');
-            }, KEEP_ALIVE_INTERVAL);
-
-            try {
-                const response = await fetch(`${provider.endpoint}/api/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody),
-                    signal: controller.signal,
-                });
-
-                clearTimeout(timeoutId);
-                clearInterval(pingInterval);
-                resolve(response);
-            } catch (error) {
-                clearTimeout(timeoutId);
-                clearInterval(pingInterval);
-                reject(error);
-            }
-        });
-
-        const response = await fetchPromise;
-
-        if (!response.ok) {
-            const errText = await response.text();
-            let errorMessage = errText;
-            try {
-                const errJson = JSON.parse(errText);
-                errorMessage = errJson.error || errText;
-            } catch (e) {
-                // Not JSON
-            }
-            throw new Error(`Ollama Error (${response.status}): ${errorMessage}`);
-        }
-
-        const result = await response.json() as {
-            message: {
-                role: string;
-                content: string;
-                tool_calls?: Array<{
-                    function: { name: string; arguments: Record<string, unknown> }
-                }>;
-            };
-            prompt_eval_count?: number;
-            eval_count?: number;
-            done?: boolean;
-        };
-
-        setTokens(result.prompt_eval_count || 0, result.eval_count || 0);
-
-        const responseMessage = result.message;
-
-        // Handle tool calls
-        if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-            // Since Ollama might not return content when calling tools, handled here
-            // Add assistant message with tool calls to history
-            messages.push({
-                role: 'assistant',
-                content: responseMessage.content || '',
-                tool_calls: responseMessage.tool_calls
+        try {
+            const response = await fetch(`${provider.endpoint}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
+                signal: controller.signal,
             });
 
-            for (const toolCall of responseMessage.tool_calls) {
-                const fc = toolCall.function;
-                console.log(`[Tool] Tool call received (Ollama): ${fc.name}`, JSON.stringify(fc.arguments));
+            clearTimeout(timeoutId);
 
-                res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.arguments } }) + '\n');
+            if (!response.ok) {
+                const errText = await response.text();
+                let errorMessage = errText;
+                try {
+                    const errJson = JSON.parse(errText);
+                    errorMessage = errJson.error || errText;
+                } catch (e) {
+                    // Not JSON
+                }
+                throw new Error(`Ollama Error (${response.status}): ${errorMessage}`);
+            }
 
-                let resultText: string;
+            if (response.body) {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let promptTokens = 0;
+                let completionTokens = 0;
+                let pendingToolCalls: Array<{ function: { name: string; arguments: Record<string, unknown> } }> = [];
+                let lastMessageContent = '';
 
-                // First, check if it's a built-in tool (no __ prefix)
-                const builtinTool = findBuiltinTool(fc.name);
-                if (builtinTool) {
-                    console.log(`[Builtin] Executing ${fc.name}...`);
-                    resultText = await builtinTool.execute(fc.arguments as Record<string, unknown> || {});
-                } else {
-                    // MCP tool: parse serverName__toolName format
-                    const [serverName, toolName] = fc.name.split('__');
-                    if (!serverName || !toolName) {
-                        console.error(`[MCP] Invalid tool name format: ${fc.name}`);
-                        resultText = `Error: Invalid tool name format: ${fc.name}`;
-                    } else {
-                        console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
-                        const toolResult = await mcpManager.callTool(serverName, toolName, fc.arguments);
-                        console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
-                        resultText = toolResult.content.map(c => c.text || '').join('\n');
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+
+                        try {
+                            const json = JSON.parse(line) as {
+                                message?: {
+                                    role: string;
+                                    content: string;
+                                    tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }>;
+                                };
+                                done?: boolean;
+                                prompt_eval_count?: number;
+                                eval_count?: number;
+                            };
+
+                            // Stream text content
+                            if (json.message?.content) {
+                                fullContent += json.message.content;
+                                lastMessageContent += json.message.content;
+                                res.write(JSON.stringify({ content: json.message.content }) + '\n');
+                            }
+
+                            // Collect tool calls (usually in final message)
+                            if (json.message?.tool_calls) {
+                                pendingToolCalls = json.message.tool_calls;
+                            }
+
+                            // Token counts (in final chunk)
+                            if (json.done && json.prompt_eval_count !== undefined) {
+                                promptTokens = json.prompt_eval_count;
+                                completionTokens = json.eval_count || 0;
+                            }
+                        } catch (e) {
+                            console.warn('[Ollama] Failed to parse streaming chunk:', line.slice(0, 100));
+                        }
                     }
                 }
 
-                // Respond with tool result
-                messages.push({
-                    role: 'tool',
-                    content: resultText,
-                    // Ollama expects name/tool_call_id? Some versions simplified.
-                    // Checking common Ollama tool format: role: 'tool', content: string
-                } as any);
+                setTokens(promptTokens, completionTokens);
 
-                res.write(JSON.stringify({ toolResult: { name: fc.name, result: resultText.slice(0, 200) } }) + '\n');
-            }
+                // Handle tool calls if any
+                if (pendingToolCalls.length > 0) {
+                    // Add assistant message with tool calls to history
+                    messages.push({
+                        role: 'assistant',
+                        content: lastMessageContent || '',
+                        tool_calls: pendingToolCalls
+                    });
 
-        } else {
-            // No tool calls, final response
-            if (responseMessage.content) {
-                fullContent += responseMessage.content;
-                res.write(JSON.stringify({ content: responseMessage.content }) + '\n');
+                    for (const toolCall of pendingToolCalls) {
+                        const fc = toolCall.function;
+                        console.log(`[Tool] Tool call received (Ollama): ${fc.name}`, JSON.stringify(fc.arguments));
+
+                        res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.arguments } }) + '\n');
+
+                        let resultText: string;
+
+                        const builtinTool = findBuiltinTool(fc.name);
+                        if (builtinTool) {
+                            console.log(`[Builtin] Executing ${fc.name}...`);
+                            resultText = await builtinTool.execute(fc.arguments as Record<string, unknown> || {});
+                        } else {
+                            const [serverName, toolName] = fc.name.split('__');
+                            if (!serverName || !toolName) {
+                                console.error(`[MCP] Invalid tool name format: ${fc.name}`);
+                                resultText = `Error: Invalid tool name format: ${fc.name}`;
+                            } else {
+                                console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
+                                const toolResult = await mcpManager.callTool(serverName, toolName, fc.arguments);
+                                console.log(`[MCP] Tool result:`, JSON.stringify(toolResult));
+                                resultText = toolResult.content.map(c => c.text || '').join('\n');
+                            }
+                        }
+
+                        messages.push({
+                            role: 'tool',
+                            content: resultText,
+                        } as any);
+
+                        res.write(JSON.stringify({ toolResult: { name: fc.name, result: resultText.slice(0, 200) } }) + '\n');
+                    }
+
+                    // Reset for next iteration
+                    fullContent = '';
+                    continue;
+                }
+
+                return fullContent;
+            } else {
+                throw new Error('No response body from Ollama API');
             }
-            break;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
         }
     }
 
