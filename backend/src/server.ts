@@ -8,7 +8,7 @@ import { McpManager } from './mcp/McpManager'; // Changed import for McpManager 
 import { SkillManager } from './skills/skillManager'; // Added SkillManager import
 import { SkillCreator } from './skills/skillCreator'; // Added SkillCreator import
 import { McpServerConfig, McpTool } from './mcp/types';
-import { BUILTIN_TOOLS, findBuiltinTool, BuiltinTool } from './tools/builtinTools';
+import { BUILTIN_TOOLS, findBuiltinTool, BuiltinTool, registerSkillCreator } from './tools/builtinTools';
 
 dotenv.config();
 
@@ -26,6 +26,7 @@ app.use(express.json());
 const mcpManager = new McpManager(path.join(__dirname, '../data/mcp-settings.json'));
 const skillManager = new SkillManager(path.join(__dirname, '../skills'));
 const skillCreator = new SkillCreator(skillManager);
+registerSkillCreator(skillCreator);
 
 app.get('/', (req, res) => {
     res.json({ status: 'ok', service: 'Codec Backend', version: '0.6.1' });
@@ -299,9 +300,9 @@ app.get('/api/skills/:name', async (req, res) => {
 /** 新規スキル初期化（Creator用） */
 app.post('/api/skills/init', async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, description = 'No description provided.' } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
-        const result = await skillCreator.initSkill(name);
+        const result = await skillCreator.initSkill(name, description);
         res.json(result);
     } catch (error: any) {
         res.status(400).json({ error: error.message });

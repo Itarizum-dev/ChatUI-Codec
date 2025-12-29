@@ -176,16 +176,18 @@ export class McpManager {
      */
     private async disconnectServer(name: string): Promise<void> {
         const conn = this.connections.get(name);
-        if (conn && conn.transport) {
-            try {
-                await conn.transport.close();
-                console.log(`[MCP] Disconnected from ${name}`);
-            } catch (e) {
-                console.error(`[MCP] Error disconnecting ${name}:`, e);
-            } finally {
-                this.connections.delete(name);
-                this.toolCache.delete(name);
+        if (conn) {
+            if (conn.transport) {
+                try {
+                    await conn.transport.close();
+                    console.log(`[MCP] Disconnected from ${name}`);
+                } catch (e) {
+                    console.error(`[MCP] Error disconnecting ${name}:`, e);
+                }
             }
+            // Always clean up resources
+            this.connections.delete(name);
+            this.toolCache.delete(name);
         }
     }
 

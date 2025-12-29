@@ -12,7 +12,7 @@ export class SkillCreator {
     /**
      * 新しいスキルを初期化する
      */
-    async initSkill(name: string): Promise<{ path: string; name: string }> {
+    async initSkill(name: string, description: string): Promise<{ path: string; name: string }> {
         // 名前のバリデーション
         if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(name)) {
             throw new Error('Invalid skill name. Must use only lowercase alphanumeric characters and hyphens.');
@@ -35,19 +35,31 @@ export class SkillCreator {
         await fs.mkdir(path.join(skillPath, 'references'));
         await fs.mkdir(path.join(skillPath, 'assets'));
 
-        // SKILL.mdテンプレート作成
+        // SKILL.mdテンプレート作成 (Agent Skills互換)
+        const skillTitle = name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         const skillMdContent = `---
 name: ${name}
-description: "TODO: Describe what this skill does and when to use it using specific keywords."
+description: "${description}"
+version: "1.0.0"
 ---
 
-# ${name}
+# ${skillTitle}
 
-## Guidelines
-- TODO: Add guidelines strictly for the model to follow
+${description}
+
+## When to use this skill
+- TODO: Add specific trigger conditions
+- Example: "When the user asks to..."
 
 ## Instructions
 1. TODO: Add step-by-step instructions
+2. Step 2
+
+## Tools Required
+- TODO: List required tools (e.g., web_search, file_system)
+
+## References
+- \`references/example.md\`: Description of the reference file
 `;
         await fs.writeFile(path.join(skillPath, 'SKILL.md'), skillMdContent);
 
