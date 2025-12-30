@@ -1,5 +1,15 @@
 # CODEC Version History
 
+## v0.9.4 - Context Retention & Rendering Fixes (2025-12-31)
+- **Fix**: AIが過去の会話履歴（特に自分自身の発言）を無視する問題を修正
+  - バックエンドでの履歴構築ロジックを改善し、AI自身の発言を確実にコンテキストに含めるように修正
+  - Gemini APIにおいて `system_instruction` を正しく使用するように変更し、ロールエラーを防止
+  - 履歴構築時の `[Provider]:` プレフィックス重複バグを修正
+- **Fix**: メッセージが表示されない/消える問題を修正
+  - ReactMarkdownが `[ ]` をリンク構文として誤認識する問題をエスケープ処理で解決
+  - Thinking/Content/Doneイベントのstate更新競合（Race Condition）を解消し、レンダリングを安定化
+- **Debug**: バックエンドにファイルベースの詳細デバッグログ (`backend-debug.log`) を導入
+
 ## v0.9.3 - Thinking Mode for Ollama (2025-12-30)
 - **Feature**: Ollama用Thinkingモード（推論過程表示）を実装
   - ヘッダーに「🧠 ON/OFF」トグルボタンを追加

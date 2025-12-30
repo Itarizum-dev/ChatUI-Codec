@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path'; // Added path import
+import path from 'path';
+import fs from 'fs';
 import { ChatRequest, ChatResponse, MessageMetadata } from './types';
 import { DEFAULT_PROVIDERS, PERSONAS } from './config';
 import { McpManager } from './mcp/McpManager'; // Changed import for McpManager class
@@ -27,6 +28,15 @@ const mcpManager = new McpManager(path.join(__dirname, '../data/mcp-settings.jso
 const skillManager = new SkillManager(path.join(__dirname, '../skills'));
 const skillCreator = new SkillCreator(skillManager);
 registerSkillCreator(skillCreator);
+
+// Debug Logger
+const DEBUG_LOG_PATH = path.join(__dirname, '../backend-debug.log');
+const logToDebugFile = (tag: string, data: any) => {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] [${tag}] ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}\n`;
+    fs.appendFileSync(DEBUG_LOG_PATH, logMessage);
+};
+
 
 app.get('/', (req, res) => {
     res.json({ status: 'ok', service: 'Codec Backend', version: '0.6.1' });
@@ -332,7 +342,10 @@ const formatContext = (context?: import('./types').Message[]) => {
         if (m.role === 'assistant' && m.personaId) {
             const p = PERSONAS.find((per) => per.id === m.personaId);
             if (p) {
-                content = `[${p.codename}]: ${content}`;
+                const prefix = `[${p.codename}]:`;
+                if (!content.trim().startsWith(prefix)) {
+                    content = `${prefix} ${content}`;
+                }
             }
         }
         return { role: m.role, content };
@@ -429,6 +442,27 @@ const cleanSchema = (schema: any): any => {
 app.post('/api/chat', async (req: Request, res: Response) => {
     const startTime = Date.now();
     console.log(`[${new Date().toISOString()}] Chat request received`);
+
+    logToDebugFile('REQUEST_RECEIVED', {
+        providerId: req.body.providerId,
+        messageLength: req.body.message?.length,
+        contextSize: req.body.context?.length
+    });
+
+    if (req.body.context && req.body.context.length > 0) {
+        logToDebugFile('CONTEXT_DUMP', req.body.context.map((m: any) => ({
+            role: m.role,
+            contentPreview: m.content?.slice(0, 50),
+            personaId: m.personaId
+        })));
+    }
+
+    console.log(`[Chat] Context size: ${req.body.context?.length || 0}`);
+    if (req.body.context) {
+        req.body.context.forEach((m: any, i: number) => {
+            console.log(`[Chat] Ctx[${i}] role=${m.role} content_len=${m.content?.length || 0} persona=${m.personaId || 'none'}`);
+        });
+    }
 
     // Set headers for streaming
     res.setHeader('Content-Type', 'text/event-stream');
@@ -734,8 +768,7 @@ async function handleGoogleChat(
         parts: [{ text: m.content }]
     }));
 
-    let contents = [
-        ...(systemPrompt ? [{ role: 'user', parts: [{ text: `System Instruction: ${systemPrompt}` }] }] : []),
+    const contents = [
         ...formattedContext,
         { role: 'user', parts: [{ text: message }] },
     ];
@@ -754,9 +787,20 @@ async function handleGoogleChat(
             generationConfig: { maxOutputTokens: 4096 },
         };
 
+        if (systemPrompt) {
+            requestBody.system_instruction = {
+                parts: [{ text: systemPrompt }]
+            };
+        }
+
         if (allDeclarations.length > 0) {
             requestBody.tools = [{ function_declarations: allDeclarations }];
         }
+
+        logToDebugFile('GEMINI_REQUEST_CONTENTS', contents.map(c => ({
+            role: c.role,
+            parts: c.parts?.map(p => p.text?.slice(0, 50))
+        })));
 
         // Use streaming endpoint
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:streamGenerateContent?key=${apiKey}&alt=sse`;
@@ -945,6 +989,20 @@ async function handleOllamaChat(
         ...formattedContext,
         { role: 'user', content: message },
     ];
+
+    if (systemPrompt) {
+        console.log(`[Ollama] System prompt applied: ${systemPrompt.slice(0, 50)}...`);
+    }
+    console.log(`[Ollama] Sending ${messages.length} messages. Roles: ${messages.map(m => m.role).join(', ')}`);
+
+    logToDebugFile('OLLAMA_REQUEST_MESSAGES', messages.map(m => ({
+        role: m.role,
+        contentPreview: m.content?.slice(0, 100)
+    })));
+
+    messages.forEach((m, i) => {
+        console.log(`[Ollama] Msg[${i}] role=${m.role} head=${m.content?.slice(0, 30)}...`);
+    });
 
     let fullContent = '';
     let fullThinking = '';

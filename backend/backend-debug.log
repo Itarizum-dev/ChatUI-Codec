@@ -1,0 +1,457 @@
+[2025-12-30T15:27:12.865Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 11,
+  "contextSize": 0
+}
+[2025-12-30T15:27:12.870Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  }
+]
+[2025-12-30T15:27:39.584Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 3,
+  "contextSize": 2
+}
+[2025-12-30T15:27:39.585Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ごりら。",
+    "personaId": "snake"
+  }
+]
+[2025-12-30T15:27:39.592Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ごりら。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  }
+]
+[2025-12-30T15:27:55.805Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 4,
+  "contextSize": 4
+}
+[2025-12-30T15:27:55.806Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ごりら。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。",
+    "personaId": "snake"
+  }
+]
+[2025-12-30T15:27:55.812Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ごりら。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  }
+]
+[2025-12-30T15:28:10.414Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 6,
+  "contextSize": 6
+}
+[2025-12-30T15:28:10.415Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ごりら。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。",
+    "personaId": "snake"
+  }
+]
+[2025-12-30T15:28:10.419Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ごりら。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  }
+]
+[2025-12-30T15:28:25.307Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 3,
+  "contextSize": 8
+}
+[2025-12-30T15:28:25.308Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ごりら。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スパイ。",
+    "personaId": "snake"
+  }
+]
+[2025-12-30T15:28:25.312Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ごりら。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スパイ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "イラン"
+  }
+]
+[2025-12-30T15:28:50.042Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 7,
+  "contextSize": 10
+}
+[2025-12-30T15:28:50.043Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ごりら。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スパイ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "イラン"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: … 失敗です。ゲームオーバー。",
+    "personaId": "snake"
+  }
+]
+[2025-12-30T15:28:50.047Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "しりとりしよう。りんご"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ごりら。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スパイ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "イラン"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: … 失敗です。ゲームオーバー。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "リトライ！イス"
+  }
+]
+[2025-12-30T15:29:04.798Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss-20b",
+  "messageLength": 3,
+  "contextSize": 10
+}
+[2025-12-30T15:29:04.798Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スパイ。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "イラン"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: … 失敗です。ゲームオーバー。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "リトライ！イス"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スズメ。",
+    "personaId": "snake"
+  }
+]
+[2025-12-30T15:29:04.801Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラッコ"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: コアラ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ラザニア"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: アザラシ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "シーからんす"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スパイ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "イラン"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: … 失敗です。ゲームオーバー。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "リトライ！イス"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: スズメ。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "メンマ"
+  }
+]
