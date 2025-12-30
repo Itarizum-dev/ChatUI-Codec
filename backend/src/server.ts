@@ -1043,6 +1043,12 @@ async function handleOllamaChat(
                             if (json.message?.content) {
                                 fullContent += json.message.content;
                                 lastMessageContent += json.message.content;
+
+                                // Some models (like gpt-oss) embed thinking in content with <think> tags
+                                if (json.message.content.includes('<think>') || json.message.content.includes('</think>')) {
+                                    receivedAnyThinking = true;
+                                }
+
                                 res.write(JSON.stringify({ content: json.message.content }) + '\n');
                             }
 
