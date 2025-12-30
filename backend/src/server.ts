@@ -439,7 +439,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     res.write(JSON.stringify({ type: 'ping' }) + '\n');
 
     const body: ChatRequest = req.body;
-    const { message, providerId, context, systemPrompt, useMcp } = body;
+    const { message, providerId, context, systemPrompt, useMcp, useThinking } = body;
 
     // Inject available skills into system prompt
     let enhancedSystemPrompt = systemPrompt || '';
@@ -537,7 +537,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         if (provider.type === 'ollama') {
             fullContent = await handleOllamaChat(
                 provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
-                (p, c) => { promptTokens = p; completionTokens = c; }
+                (p, c) => { promptTokens = p; completionTokens = c; },
+                useThinking || false
             );
 
         } else if (provider.type === 'anthropic') {
@@ -930,7 +931,8 @@ async function handleOllamaChat(
     mcpTools: McpTool[],
     builtinTools: BuiltinTool[],
     res: Response,
-    setTokens: (prompt: number, completion: number) => void
+    setTokens: (prompt: number, completion: number) => void,
+    useThinking: boolean = false
 ): Promise<string> {
     const formattedContext = formatContext(context);
 
@@ -941,6 +943,7 @@ async function handleOllamaChat(
     ];
 
     let fullContent = '';
+    let fullThinking = '';
     const MAX_TOOL_ITERATIONS = 10;
 
     // Combine MCP tools and built-in tools for LLM
@@ -955,6 +958,12 @@ async function handleOllamaChat(
             messages,
             stream: true, // Enable streaming
         };
+
+        // Enable thinking mode if requested
+        if (useThinking) {
+            requestBody.think = true;
+            console.log('[Ollama] Thinking mode enabled');
+        }
 
         if (allTools.length > 0) {
             requestBody.tools = allTools;
@@ -997,6 +1006,7 @@ async function handleOllamaChat(
                 let completionTokens = 0;
                 let pendingToolCalls: Array<{ function: { name: string; arguments: Record<string, unknown> } }> = [];
                 let lastMessageContent = '';
+                let receivedAnyThinking = false;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1014,12 +1024,20 @@ async function handleOllamaChat(
                                 message?: {
                                     role: string;
                                     content: string;
+                                    thinking?: string;
                                     tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }>;
                                 };
                                 done?: boolean;
                                 prompt_eval_count?: number;
                                 eval_count?: number;
                             };
+
+                            // Stream thinking content (for reasoning models)
+                            if (json.message?.thinking) {
+                                fullThinking += json.message.thinking;
+                                receivedAnyThinking = true;
+                                res.write(JSON.stringify({ thinking: json.message.thinking }) + '\n');
+                            }
 
                             // Stream text content
                             if (json.message?.content) {
@@ -1045,6 +1063,18 @@ async function handleOllamaChat(
                 }
 
                 setTokens(promptTokens, completionTokens);
+
+                // Check for unsupported model (thinking mode ON but no thinking received)
+                if (useThinking && !receivedAnyThinking && fullContent) {
+                    res.write(JSON.stringify({
+                        thinkingError: 'このモデルはThinkingモードに対応していません。対応モデル: qwen3, deepseek-r1, phi4-reasoning 等'
+                    }) + '\n');
+                }
+
+                // Send thinkingDone signal if we received any thinking
+                if (receivedAnyThinking) {
+                    res.write(JSON.stringify({ thinkingDone: true }) + '\n');
+                }
 
                 // Handle tool calls if any
                 if (pendingToolCalls.length > 0) {
@@ -1105,3 +1135,4 @@ async function handleOllamaChat(
 
     return fullContent;
 }
+

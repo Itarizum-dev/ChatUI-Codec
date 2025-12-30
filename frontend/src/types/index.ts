@@ -27,6 +27,8 @@ export interface Message {
     providerId?: string;
     personaId?: string;
     metadata?: MessageMetadata;
+    thinking?: string;  // Ollamaのthinkingモードで受信した推論過程
+    thinkingCollapsed?: boolean; // UI用: 折りたたみ状態
 }
 
 // Debug/Performance Metadata

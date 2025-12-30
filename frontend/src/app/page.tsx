@@ -29,6 +29,10 @@ export default function CodecPage() {
     const [showMcpSettings, setShowMcpSettings] = useState(false);
     const [toolStatus, setToolStatus] = useState<string | null>(null);
 
+    // Thinking mode state (Ollama only)
+    const [useThinking, setUseThinking] = useState(false);
+    const [thinkingError, setThinkingError] = useState<string | null>(null);
+
     // Sound
     const { playTypeSound, playCallSound, toggleMute } = useCodecSound();
     const [isMuted, setIsMuted] = useState(false);
@@ -137,8 +141,13 @@ export default function CodecPage() {
                 timestamp: new Date(),
                 providerId: currentLLM.id,
                 personaId: currentPersona.id,
+                thinking: "",
+                thinkingCollapsed: false,
             },
         ]);
+
+        // Clear previous thinking error
+        setThinkingError(null);
 
         // Connection Timeout Logic - 30s to allow for model loading (especially Ollama)
         const CONNECTION_TIMEOUT = 30000;
@@ -158,6 +167,7 @@ export default function CodecPage() {
                     context: messages.slice(-10),
                     systemPrompt: currentPersona.systemPrompt,
                     useMcp: useMcp,
+                    useThinking: useThinking && currentLLM.type === 'ollama',
                 }),
                 signal: controller.signal,
             });
@@ -174,6 +184,7 @@ export default function CodecPage() {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let accumulatedContent = "";
+            let accumulatedThinking = "";
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -205,6 +216,34 @@ export default function CodecPage() {
                         }
                         if (json.warning) {
                             console.warn('MCP Warning:', json.warning);
+                            continue;
+                        }
+
+                        // Handle thinking mode (Ollama)
+                        if (json.thinking) {
+                            accumulatedThinking += json.thinking;
+                            setMessages((prev) =>
+                                prev.map((msg) =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, thinking: accumulatedThinking }
+                                        : msg
+                                )
+                            );
+                            continue;
+                        }
+                        if (json.thinkingError) {
+                            setThinkingError(json.thinkingError);
+                            continue;
+                        }
+                        if (json.thinkingDone) {
+                            // Collapse thinking panel when done
+                            setMessages((prev) =>
+                                prev.map((msg) =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, thinkingCollapsed: true }
+                                        : msg
+                                )
+                            );
                             continue;
                         }
 
@@ -321,6 +360,14 @@ export default function CodecPage() {
                             MCP {useMcp ? 'ON' : 'OFF'}
                         </button>
                         <button
+                            className={`${styles.mcpToggle} ${useThinking ? styles.active : ''}`}
+                            onClick={() => setUseThinking(!useThinking)}
+                            title={useThinking ? 'Thinking Mode Enabled (Ollama only)' : 'Thinking Mode Disabled'}
+                            style={{ marginLeft: '4px' }}
+                        >
+                            🧠 {useThinking ? 'ON' : 'OFF'}
+                        </button>
+                        <button
                             className={styles.mcpSettingsBtn}
                             onClick={() => setShowMcpSettings(true)}
                             title="MCP Settings"
@@ -412,6 +459,17 @@ export default function CodecPage() {
                                 : (persona?.portraitUrl || null);
                             const iconAlt = isUser ? "ME" : (persona?.codename || "Unknown");
 
+                            // Toggle thinking panel collapse
+                            const toggleThinkingCollapse = () => {
+                                setMessages((prev) =>
+                                    prev.map((m) =>
+                                        m.id === msg.id
+                                            ? { ...m, thinkingCollapsed: !m.thinkingCollapsed }
+                                            : m
+                                    )
+                                );
+                            };
+
                             return (
                                 <div key={msg.id} className={`${styles.messageRow} ${isUser ? styles.user : styles.assistant}`}>
                                     <div className={styles.messageIcon}>
@@ -427,6 +485,36 @@ export default function CodecPage() {
                                         <span className={styles.messageSender}>
                                             {isUser ? "ME" : persona?.codename}
                                         </span>
+
+                                        {/* Thinking Panel */}
+                                        {!isUser && msg.thinking && (
+                                            <div className={styles.thinkingPanel}>
+                                                <div
+                                                    className={styles.thinkingHeader}
+                                                    onClick={toggleThinkingCollapse}
+                                                >
+                                                    <span>🧠 {msg.thinkingCollapsed ? '思考過程を表示' : '思考中...'}</span>
+                                                    <span className={styles.thinkingToggle}>
+                                                        {msg.thinkingCollapsed ? '▶' : '▼'}
+                                                    </span>
+                                                </div>
+                                                {!msg.thinkingCollapsed && (
+                                                    <div className={styles.thinkingContent}>
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {msg.thinking}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Thinking Error */}
+                                        {!isUser && thinkingError && messages.indexOf(msg) === messages.length - 1 && (
+                                            <div className={styles.thinkingError}>
+                                                ⚠️ {thinkingError}
+                                            </div>
+                                        )}
+
                                         <div className={`${styles.messageContent} markdown-content`}>
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}

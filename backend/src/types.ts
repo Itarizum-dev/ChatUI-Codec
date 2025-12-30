@@ -25,6 +25,8 @@ export interface Message {
     providerId?: string;
     personaId?: string;
     metadata?: MessageMetadata;
+    thinking?: string;
+    thinkingCollapsed?: boolean;
 }
 
 export interface MessageMetadata {
@@ -44,6 +46,7 @@ export interface ChatRequest {
     context?: Message[];
     systemPrompt?: string;
     useMcp?: boolean;
+    useThinking?: boolean; // Ollamaのthinkingモード有効化
 }
 
 export interface ChatResponse {

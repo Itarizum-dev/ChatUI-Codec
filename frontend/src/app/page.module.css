@@ -899,3 +899,76 @@
     color: var(--codec-green-mid);
     font-family: var(--font-mono);
 }
+
+/* ===== THINKING MODE PANEL ===== */
+.thinkingPanel {
+    margin-bottom: 10px;
+    border: 1px solid var(--codec-green-dim);
+    background: rgba(0, 30, 20, 0.5);
+    overflow: hidden;
+}
+
+.thinkingHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 40, 25, 0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.75rem;
+    color: var(--codec-green-mid);
+    letter-spacing: 1px;
+}
+
+.thinkingHeader:hover {
+    background: rgba(0, 50, 30, 0.7);
+    color: var(--codec-green-bright);
+}
+
+.thinkingToggle {
+    font-size: 0.6rem;
+    color: var(--codec-green-dim);
+}
+
+.thinkingContent {
+    padding: 12px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--codec-green-dark);
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: 1px solid var(--codec-green-dim);
+    animation: thinkingFadeIn 0.3s ease-out;
+}
+
+.thinkingContent p {
+    margin: 0 0 8px 0;
+}
+
+.thinkingContent p:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes thinkingFadeIn {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 300px;
+    }
+}
+
+/* Thinking Error */
+.thinkingError {
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: rgba(80, 40, 0, 0.3);
+    border: 1px solid #ff9900;
+    color: #ffcc66;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
