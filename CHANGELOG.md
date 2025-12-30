@@ -1,5 +1,16 @@
 # CODEC Version History
 
+## v0.9.3 - Thinking Mode for Ollama (2025-12-30)
+- **Feature**: Ollama用Thinkingモード（推論過程表示）を実装
+  - ヘッダーに「🧠 ON/OFF」トグルボタンを追加
+  - Ollama APIに `think: true` パラメータを送信
+  - 推論過程を折りたたみ式パネルで表示
+  - パネルはクリックで展開/折りたたみ可能
+- **Backend**: `thinking` フィールドをストリーミング対応
+  - 非対応モデル検出時にエラーメッセージを返却
+  - 対応モデル: qwen3, deepseek-r1, phi4-reasoning 等
+- **UI**: 思考完了時にパネルを自動で折りたたむ機能
+
 ## v0.9.2 - Streaming Support for Gemini & Ollama (2025-12-29)
 - **Feature**: Gemini APIでのストリーミング通信を実装
   - `generateContent` → `streamGenerateContent` (SSE) に変更
