@@ -199,6 +199,7 @@ export default function CodecPage() {
                 for (const line of lines) {
                     try {
                         const json = JSON.parse(line);
+                        console.log('[Frontend] Received:', JSON.stringify(json).slice(0, 100));
 
                         // Ignore ping messages
                         if (json.type === 'ping') continue;
@@ -222,38 +223,30 @@ export default function CodecPage() {
                         // Handle thinking mode (Ollama)
                         if (json.thinking) {
                             accumulatedThinking += json.thinking;
-                            setMessages((prev) =>
-                                prev.map((msg) =>
-                                    msg.id === assistantMessageId
-                                        ? { ...msg, thinking: accumulatedThinking }
-                                        : msg
-                                )
-                            );
-                            continue;
                         }
                         if (json.thinkingError) {
                             setThinkingError(json.thinkingError);
-                            continue;
                         }
-                        if (json.thinkingDone) {
-                            // Collapse thinking panel when done
-                            setMessages((prev) =>
-                                prev.map((msg) =>
-                                    msg.id === assistantMessageId
-                                        ? { ...msg, thinkingCollapsed: true }
-                                        : msg
-                                )
-                            );
-                            continue;
-                        }
-
                         if (json.content) {
                             setToolStatus(null);
                             accumulatedContent += json.content;
+                            console.log('[Frontend] Accumulated content:', accumulatedContent);
+                        }
+
+                        // Single state update for all message fields
+                        const hasThinkingUpdate = json.thinking || json.thinkingDone;
+                        const hasContentUpdate = json.content;
+
+                        if (hasThinkingUpdate || hasContentUpdate) {
                             setMessages((prev) =>
                                 prev.map((msg) =>
                                     msg.id === assistantMessageId
-                                        ? { ...msg, content: accumulatedContent }
+                                        ? {
+                                            ...msg,
+                                            thinking: accumulatedThinking || msg.thinking,
+                                            content: accumulatedContent || msg.content,
+                                            thinkingCollapsed: json.thinkingDone ? true : msg.thinkingCollapsed,
+                                        }
                                         : msg
                                 )
                             );
@@ -450,6 +443,7 @@ export default function CodecPage() {
                             </div>
                         )}
                         {messages.map((msg) => {
+                            console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
                             const isUser = msg.role === 'user';
                             const persona = !isUser
                                 ? (PERSONAS.find(p => p.id === msg.personaId) || currentPersona)
@@ -534,7 +528,9 @@ export default function CodecPage() {
                                                     }
                                                 }}
                                             >
-                                                {msg.content || (isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 ? "// RECEIVING TRANSMISSION... //" : "")}
+                                                {/* Escape square brackets to prevent Markdown link parsing issues */}
+                                                {(msg.content || (isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 ? "// RECEIVING TRANSMISSION... //" : ""))
+                                                    .replace(/\[/g, '\\[').replace(/\]/g, '\\]')}
                                             </ReactMarkdown>
                                             {isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 && (
                                                 <span className={styles.cursorBlock}></span>

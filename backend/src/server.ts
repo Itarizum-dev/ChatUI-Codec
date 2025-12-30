@@ -761,11 +761,15 @@ async function handleGoogleChat(
         // Use streaming endpoint
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
+        console.log(`[Gemini] Iteration ${iteration + 1}: Sending request with ${contents.length} messages`);
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
         });
+
+        console.log(`[Gemini] Response status: ${response.status}`);
 
         if (!response.ok) {
             const errText = await response.text();
@@ -977,6 +981,8 @@ async function handleOllamaChat(
         }, LLM_TIMEOUT);
 
         try {
+            console.log(`[Ollama] Iteration ${iteration + 1}: Sending request to ${provider.model}`);
+
             const response = await fetch(`${provider.endpoint}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -985,6 +991,7 @@ async function handleOllamaChat(
             });
 
             clearTimeout(timeoutId);
+            console.log(`[Ollama] Response status: ${response.status}`);
 
             if (!response.ok) {
                 const errText = await response.text();
@@ -1061,6 +1068,7 @@ async function handleOllamaChat(
                             if (json.done && json.prompt_eval_count !== undefined) {
                                 promptTokens = json.prompt_eval_count;
                                 completionTokens = json.eval_count || 0;
+                                console.log(`[Ollama] Stream done. Tokens: ${promptTokens}/${completionTokens}`);
                             }
                         } catch (e) {
                             console.warn('[Ollama] Failed to parse streaming chunk:', line.slice(0, 100));
@@ -1068,6 +1076,8 @@ async function handleOllamaChat(
                     }
                 }
 
+                console.log(`[Ollama] Streaming complete. Content length: ${fullContent.length}`);
+                console.log(`[Ollama] Content preview: "${fullContent.slice(0, 200)}"`);
                 setTokens(promptTokens, completionTokens);
 
                 // Check for unsupported model (thinking mode ON but no thinking received)
