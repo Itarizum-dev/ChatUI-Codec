@@ -65,6 +65,14 @@ export interface ModelsResponse {
 // ===== フォールバック用静的プロバイダー =====
 export const FALLBACK_PROVIDERS: LLMProvider[] = [
     {
+        id: 'ollama-gpt-oss',
+        name: 'Ollama (GPT-OSS 20B)',
+        endpoint: 'http://localhost:11434',
+        type: 'ollama',
+        model: 'gpt-oss:20b',
+        apiKeyEnv: '',
+    },
+    {
         id: 'gemini-2.5-flash',
         name: 'Gemini 2.5 Flash',
         endpoint: '/api/chat',
