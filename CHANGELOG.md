@@ -1,5 +1,9 @@
 # CODEC Version History
 
+## v1.0.2 - Visual Readability Polish (2026-01-04)
+- **UI**: 走査線（Scanline）エフェクトの不透明度を調整 (0.4 -> 0.2)
+  - Wirelessな雰囲気を維持しつつ、テキストの視認性を向上
+
 ## v1.0.1 - Conversation Switch Sound (2026-01-04)
 - **Audio**: 会話ログ切り替え時にも効果音（Start Sound）を再生するように変更
   - 周波数を合わせる操作感を向上

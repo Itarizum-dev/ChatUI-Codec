@@ -64,8 +64,8 @@ body {
   background: repeating-linear-gradient(0deg,
       transparent 0px,
       transparent 2px,
-      rgba(0, 0, 0, 0.4) 2px,
-      rgba(0, 0, 0, 0.4) 4px);
+      rgba(0, 0, 0, 0.2) 2px,
+      rgba(0, 0, 0, 0.2) 4px);
   pointer-events: none;
   z-index: 1000;
 }
