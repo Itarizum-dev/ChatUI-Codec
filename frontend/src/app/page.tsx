@@ -116,6 +116,22 @@ export default function CodecPage() {
             return;
         }
 
+        // Command: Help
+        if (input.trim() === '/help') {
+            const helpContent = "**Available Commands**\n\n- `/help`: Show this help message\n- `/clear`: Clear conversation history";
+
+            const helpMessage: Message = {
+                id: crypto.randomUUID(),
+                role: 'system',
+                content: helpContent,
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, helpMessage]);
+            setInput("");
+            playTypeSound();
+            return;
+        }
+
         const userMessage: Message = {
             id: crypto.randomUUID(),
             role: "user",
@@ -445,13 +461,14 @@ export default function CodecPage() {
                         {messages.map((msg) => {
                             console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
                             const isUser = msg.role === 'user';
-                            const persona = !isUser
+                            const isSystem = msg.role === 'system';
+                            const persona = !isUser && !isSystem
                                 ? (PERSONAS.find(p => p.id === msg.personaId) || currentPersona)
                                 : null;
                             const iconSrc = isUser
                                 ? "/portraits/soldier_me.png"
                                 : (persona?.portraitUrl || null);
-                            const iconAlt = isUser ? "ME" : (persona?.codename || "Unknown");
+                            const iconAlt = isUser ? "ME" : isSystem ? "SYS" : (persona?.codename || "Unknown");
 
                             // Toggle thinking panel collapse
                             const toggleThinkingCollapse = () => {
@@ -477,7 +494,7 @@ export default function CodecPage() {
                                     </div>
                                     <div className={`${styles.message} ${isUser ? styles.user : styles.assistant}`}>
                                         <span className={styles.messageSender}>
-                                            {isUser ? "ME" : persona?.codename}
+                                            {isUser ? "ME" : isSystem ? "SYSTEM" : persona?.codename}
                                         </span>
 
                                         {/* Thinking Panel */}
