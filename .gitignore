@@ -34,3 +34,10 @@ Thumbs.db
 
 # MCP Settings (contains user-specific configurations)
 backend/data/mcp-settings.json
+
+# ngrok & Security
+ngrok_recovery_codes.txt
+ngrok.yml
+
+# Logs
+*.log
