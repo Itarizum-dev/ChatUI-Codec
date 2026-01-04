@@ -12,8 +12,39 @@ import { useCodecSound } from '@/hooks/useCodecSound';
 import SkillList from '@/components/skills/SkillList';
 import SkillDetailModal from '@/components/skills/SkillDetailModal';
 
+interface Conversation {
+    id: string;
+    title: string;
+    messages: Message[];
+    updatedAt: number; // timestamp
+}
+
 export default function CodecPage() {
-    const [messages, setMessages] = useState<Message[]>([]);
+    // --- Conversation State Management ---
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+
+    // Derived state for current messages
+    // We use a getter to emulate the old "messages" state variable
+    const activeConversation = conversations.find(c => c.id === activeConversationId);
+    const messages = activeConversation ? activeConversation.messages : [];
+
+    // Emulate setMessages to minimize refactoring impact
+    // This allows us to keep handleSend and other logic mostly unchanged
+    const setMessages = (update: Message[] | ((prev: Message[]) => Message[])) => {
+        if (!activeConversationId) return;
+
+        setConversations(prevConvos =>
+            prevConvos.map(c => {
+                if (c.id === activeConversationId) {
+                    const newMessages = typeof update === 'function' ? update(c.messages) : update;
+                    return { ...c, messages: newMessages, updatedAt: Date.now() };
+                }
+                return c;
+            })
+        );
+    };
+
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'contacts' | 'skills'>('contacts');
@@ -36,6 +67,7 @@ export default function CodecPage() {
     // Sound
     const { playTypeSound, playCallSound, playOpenSound, toggleMute } = useCodecSound();
     const [isMuted, setIsMuted] = useState(false);
+    const [showAllHistory, setShowAllHistory] = useState(false);
     // Calling animation state
     const [isCalling, setIsCalling] = useState(false);
     const [callingTarget, setCallingTarget] = useState<Persona | null>(null);
@@ -53,15 +85,6 @@ export default function CodecPage() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     // ... (rest of refs)
-
-    // ... (rest of state)
-
-    // (Omitted auto-play effect as it is replaced by handleInitialize)
-
-    // ... (rest of effects)
-
-
-
 
     const abortControllerRef = useRef<AbortController | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -100,38 +123,206 @@ export default function CodecPage() {
         refreshModels();
     }, [refreshModels]);
 
-    // History persistence
+    // --- History Persistence & Migration ---
     useEffect(() => {
-        const saved = localStorage.getItem('codec-history');
-        if (saved) {
+        // Check for new multi-conversation storage
+        const savedConversations = localStorage.getItem('codec-conversations');
+
+        if (savedConversations) {
             try {
-                const parsed = JSON.parse(saved);
-                const restored = parsed.map((m: any) => ({
-                    ...m,
-                    timestamp: new Date(m.timestamp)
+                const parsed = JSON.parse(savedConversations);
+                // Hydrate Dates
+                const hydrated = parsed.map((c: any) => ({
+                    ...c,
+                    messages: c.messages.map((m: any) => ({
+                        ...m,
+                        timestamp: new Date(m.timestamp)
+                    }))
                 }));
-                setMessages(restored);
+                // Sort by updatedAt desc
+                hydrated.sort((a: Conversation, b: Conversation) => b.updatedAt - a.updatedAt);
+
+                setConversations(hydrated);
+                if (hydrated.length > 0) {
+                    setActiveConversationId(hydrated[0].id);
+                } else {
+                    createNewConversation();
+                }
             } catch (e) {
-                console.error("Failed to load history", e);
+                console.error("Failed to load conversations", e);
+                createNewConversation();
+            }
+        } else {
+            // Check for legacy single-history storage
+            const legacyHistory = localStorage.getItem('codec-history');
+            if (legacyHistory) {
+                try {
+                    const parsed = JSON.parse(legacyHistory);
+                    const restoredMsgs = parsed.map((m: any) => ({
+                        ...m,
+                        timestamp: new Date(m.timestamp)
+                    }));
+
+                    if (restoredMsgs.length > 0) {
+                        // Migrate
+                        const newId = crypto.randomUUID();
+                        const newConvo: Conversation = {
+                            id: newId,
+                            title: "Legacy Conversation",
+                            messages: restoredMsgs,
+                            updatedAt: Date.now()
+                        };
+                        setConversations([newConvo]);
+                        setActiveConversationId(newId);
+                        // Clear legacy
+                        localStorage.removeItem('codec-history');
+                    } else {
+                        createNewConversation();
+                    }
+                } catch (e) {
+                    console.error("Failed to migrate legacy history", e);
+                    createNewConversation();
+                }
+            } else {
+                createNewConversation();
             }
         }
-        // Play Open Sound on load - Removed in favor of Initialization Overlay
-        // playOpenSound();
-    }, [playOpenSound]);
+    }, [refreshModels]);
 
+    // Save conversations to local storage
     useEffect(() => {
-        if (messages.length > 0) {
-            localStorage.setItem('codec-history', JSON.stringify(messages));
+        if (conversations.length > 0) {
+            localStorage.setItem('codec-conversations', JSON.stringify(conversations));
         }
-    }, [messages]);
+    }, [conversations]);
+
+    // --- Conversation Actions ---
+
+    const createNewConversation = () => {
+        const newId = crypto.randomUUID();
+        const newConvo: Conversation = {
+            id: newId,
+            title: "New Frequency",
+            messages: [],
+            updatedAt: Date.now()
+        };
+        setConversations(prev => [newConvo, ...prev]);
+        setActiveConversationId(newId);
+        playOpenSound(); // Sound feedback
+    };
+
+    // Ensure there is always at least one conversation and activeId is valid
+    useEffect(() => {
+        // If active ID is gone (deleted), switch to top one
+        if (conversations.length > 0 && !conversations.find(c => c.id === activeConversationId)) {
+            setActiveConversationId(conversations[0].id);
+        }
+    }, [conversations, activeConversationId]);
+
+    // Better delete handler interacting with state directly
+    const handleDeleteConversation = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        const newConvos = conversations.filter(c => c.id !== id);
+
+        if (newConvos.length === 0) {
+            // If deleting the last one, immediately create a new one
+            const newId = crypto.randomUUID();
+            const newConvo = { id: newId, title: "New Frequency", messages: [], updatedAt: Date.now() };
+            setConversations([newConvo]);
+            setActiveConversationId(newId);
+        } else {
+            setConversations(newConvos);
+            if (id === activeConversationId) {
+                setActiveConversationId(newConvos[0].id);
+            }
+        }
+    };
+
+    // Auto-Summarization Logic
+    useEffect(() => {
+        if (!activeConversation) return;
+
+        // Generate title if it's default and we have enough messages
+        if (activeConversation.title === "New Frequency" && activeConversation.messages.length >= 2) {
+            const lastMsg = activeConversation.messages[activeConversation.messages.length - 1];
+            // Ensure it's assistant msg and not thinking
+            if (lastMsg.role === 'assistant' && !lastMsg.thinking) {
+                generateTitle(activeConversation.id, activeConversation.messages);
+            }
+        }
+    }, [activeConversation?.messages?.length, activeConversationId]); // Watching length
+
+    const generateTitle = async (convId: string, msgs: Message[]) => {
+        try {
+            const userMsg = msgs.find(m => m.role === 'user');
+            if (!userMsg) return;
+
+            // Optimistic update with truncation
+            let summary = userMsg.content.slice(0, 30) + (userMsg.content.length > 30 ? "..." : "");
+            setConversations(prev => prev.map(c =>
+                c.id === convId ? { ...c, title: summary } : c
+            ));
+
+            // Background LLM call for better summary
+            // Using a separate controller to not interfere with main chat
+            const response = await fetch(`${BACKEND_URL}/api/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: `Generate a very short title (max 5 words) for this conversation based on the first message: "${userMsg.content}". Output ONLY the title.`,
+                    providerId: currentLLM.id,
+                    personaId: 'system',
+                    context: [],
+                    systemPrompt: "You are a title generator. Output only the title, no quotes, no preamble.",
+                    useMcp: false
+                })
+            });
+
+            if (!response.ok) return;
+
+            const reader = response.body?.getReader();
+            if (!reader) return;
+
+            const decoder = new TextDecoder();
+            let fullTitle = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (!line) continue;
+                    try {
+                        const json = JSON.parse(line);
+                        if (json.content) fullTitle += json.content;
+                    } catch (e) {
+                        // ignore parse errors
+                    }
+                }
+            }
+
+            if (fullTitle && fullTitle.trim()) {
+                const finalTitle = fullTitle.trim().replace(/^["']|["']$/g, '');
+                setConversations(prev => prev.map(c =>
+                    c.id === convId ? { ...c, title: finalTitle } : c
+                ));
+            }
+
+        } catch (e) {
+            console.error("Title generation failed", e);
+        }
+    };
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
-        // Command: Clear history
+        // Command: Clear history (Only clears current conversation now)
         if (input.trim() === '/clear') {
-            setMessages([]);
-            localStorage.removeItem('codec-history');
+            setMessages([]); // Helper uses active ID
+            // localStorage.removeItem('codec-history'); // No longer needed
             setInput("");
             playTypeSound();
             return;
@@ -236,7 +427,7 @@ export default function CodecPage() {
                 for (const line of lines) {
                     try {
                         const json = JSON.parse(line);
-                        console.log('[Frontend] Received:', JSON.stringify(json).slice(0, 100));
+                        // console.log('[Frontend] Received:', JSON.stringify(json).slice(0, 100));
 
                         // Ignore ping messages
                         if (json.type === 'ping') continue;
@@ -267,7 +458,7 @@ export default function CodecPage() {
                         if (json.content) {
                             setToolStatus(null);
                             accumulatedContent += json.content;
-                            console.log('[Frontend] Accumulated content:', accumulatedContent);
+                            // console.log('[Frontend] Accumulated content:', accumulatedContent);
                         }
 
                         // Single state update for all message fields
@@ -376,10 +567,6 @@ export default function CodecPage() {
         return lastAssistant?.metadata;
     };
 
-
-
-
-
     return (
         <>
             <div className={styles.codecContainer}>
@@ -428,20 +615,62 @@ export default function CodecPage() {
                     </span>
                 </header>
 
-                {/* Left Panel - ME Portrait */}
+                {/* Left Panel - Conversation List & System Data */}
                 <aside className={styles.codecPortraitPanel}>
-                    <div className={styles.portraitFrame}>
+                    {/* ME Portrait */}
+                    <div className={styles.portraitFrame} style={{ height: '90px', width: '90px', marginBottom: '5px' }}>
                         <img
                             src="/portraits/soldier_me.png"
                             alt="Me"
                             className={styles.portraitImageRaw}
                         />
                     </div>
-                    <div className={styles.portraitName}>ME</div>
+                    <div className={styles.portraitName}>ME - LOGS</div>
                     <div className={styles.portraitStatus}>SOLDIER</div>
 
-                    {/* Decorative Filler: Audio Visualizer & Status */}
-                    <div className={styles.panelFiller}>
+                    {/* Conversation List Container - Flexible Height */}
+                    <div className={styles.conversationListContainer} style={{ flex: '1 1 auto', minHeight: '100px', marginBottom: '10px' }}>
+                        <button
+                            className={styles.newChatButton}
+                            onClick={createNewConversation}
+                        >
+                            + NEW FREQ
+                        </button>
+
+                        <div className={styles.historyList}>
+                            {/* Showing logic: If collapsed, show max 3. Else all. */}
+                            {(showAllHistory ? conversations : conversations.slice(0, 3)).map(convo => (
+                                <div
+                                    key={convo.id}
+                                    className={`${styles.historyItem} ${convo.id === activeConversationId ? styles.activeHistory : ''}`}
+                                    onClick={() => setActiveConversationId(convo.id)}
+                                >
+                                    <span className={styles.historyTitle} title={convo.title}>
+                                        {convo.title}
+                                    </span>
+                                    <button
+                                        className={styles.deleteHistoryBtn}
+                                        onClick={(e) => handleDeleteConversation(e, convo.id)}
+                                        title="Delete Log"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {conversations.length > 3 && (
+                            <button
+                                className={styles.expandHistoryBtn}
+                                onClick={() => setShowAllHistory(!showAllHistory)}
+                            >
+                                {showAllHistory ? '▲ COLLAPSE' : `▼ SHOW ALL (${conversations.length})`}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Restored System Data - Fixed at Bottom */}
+                    <div className={styles.panelFiller} style={{ marginTop: 'auto', flex: '0 0 auto', paddingTop: '10px', borderTop: '1px solid var(--codec-green-dim)' }}>
                         <div className={styles.audioVisualizer}>
                             <div className={styles.bar}></div>
                             <div className={styles.bar}></div>
@@ -513,7 +742,7 @@ export default function CodecPage() {
                                     </div>
                                 )}
                                 {messages.map((msg) => {
-                                    console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
+                                    // console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
                                     const isUser = msg.role === 'user';
                                     const isSystem = msg.role === 'system';
                                     const persona = !isUser && !isSystem
