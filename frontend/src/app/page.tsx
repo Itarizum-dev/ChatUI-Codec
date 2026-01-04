@@ -36,7 +36,9 @@ export default function CodecPage() {
     // Sound
     const { playTypeSound, playCallSound, playOpenSound, toggleMute } = useCodecSound();
     const [isMuted, setIsMuted] = useState(false);
-    // const [isInitialized, setIsInitialized] = useState(false); // Removed overlay
+    // Calling animation state
+    const [isCalling, setIsCalling] = useState(false);
+    const [callingTarget, setCallingTarget] = useState<Persona | null>(null);
 
     const handleMuteToggle = () => {
         const newState = !isMuted;
@@ -493,128 +495,138 @@ export default function CodecPage() {
                 {/* Center - Chat Area */}
                 <main className={styles.codecChatPanel}>
                     <div className={styles.chatMessages}>
-                        {messages.length === 0 && (
-                            <div className={styles.message}>
-                                <span className={styles.messageSender}>SYSTEM</span>
-                                <span className={styles.messageContent}>
-                                    {"// CODEC ONLINE - Ready for transmission //"} <br />
-                                    {"// Type /help for command list //"}
-                                </span>
+                        {isCalling ? (
+                            <div className={styles.callingOverlay}>
+                                <div className={styles.callingTitle}>CALLING</div>
+                                <div className={styles.callingTarget}>{callingTarget?.codename}</div>
+                                <div className={styles.callingFreq}>{callingTarget?.frequency}</div>
                             </div>
-                        )}
-                        {messages.map((msg) => {
-                            console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
-                            const isUser = msg.role === 'user';
-                            const isSystem = msg.role === 'system';
-                            const persona = !isUser && !isSystem
-                                ? (PERSONAS.find(p => p.id === msg.personaId) || currentPersona)
-                                : null;
-                            const iconSrc = isUser
-                                ? "/portraits/soldier_me.png"
-                                : (persona?.portraitUrl || null);
-                            const iconAlt = isUser ? "ME" : isSystem ? "SYS" : (persona?.codename || "Unknown");
-
-                            // Toggle thinking panel collapse
-                            const toggleThinkingCollapse = () => {
-                                setMessages((prev) =>
-                                    prev.map((m) =>
-                                        m.id === msg.id
-                                            ? { ...m, thinkingCollapsed: !m.thinkingCollapsed }
-                                            : m
-                                    )
-                                );
-                            };
-
-                            return (
-                                <div key={msg.id} className={`${styles.messageRow} ${isUser ? styles.user : styles.assistant}`}>
-                                    <div className={styles.messageIcon}>
-                                        {iconSrc ? (
-                                            <img src={iconSrc} alt={iconAlt} />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--codec-green-mid)' }}>
-                                                {iconAlt[0]}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={`${styles.message} ${isUser ? styles.user : styles.assistant}`}>
-                                        <span className={styles.messageSender}>
-                                            {isUser ? "ME" : isSystem ? "SYSTEM" : persona?.codename}
+                        ) : (
+                            <>
+                                {messages.length === 0 && (
+                                    <div className={styles.message}>
+                                        <span className={styles.messageSender}>SYSTEM</span>
+                                        <span className={styles.messageContent}>
+                                            {"// CODEC ONLINE - Ready for transmission //"} <br />
+                                            {"// Type /help for command list //"}
                                         </span>
+                                    </div>
+                                )}
+                                {messages.map((msg) => {
+                                    console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
+                                    const isUser = msg.role === 'user';
+                                    const isSystem = msg.role === 'system';
+                                    const persona = !isUser && !isSystem
+                                        ? (PERSONAS.find(p => p.id === msg.personaId) || currentPersona)
+                                        : null;
+                                    const iconSrc = isUser
+                                        ? "/portraits/soldier_me.png"
+                                        : (persona?.portraitUrl || null);
+                                    const iconAlt = isUser ? "ME" : isSystem ? "SYS" : (persona?.codename || "Unknown");
 
-                                        {/* Thinking Panel */}
-                                        {!isUser && msg.thinking && (
-                                            <div className={styles.thinkingPanel}>
-                                                <div
-                                                    className={styles.thinkingHeader}
-                                                    onClick={toggleThinkingCollapse}
-                                                >
-                                                    <span>🧠 {msg.thinkingCollapsed ? '思考過程を表示' : '思考中...'}</span>
-                                                    <span className={styles.thinkingToggle}>
-                                                        {msg.thinkingCollapsed ? '▶' : '▼'}
-                                                    </span>
-                                                </div>
-                                                {!msg.thinkingCollapsed && (
-                                                    <div className={styles.thinkingContent}>
-                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                            {msg.thinking}
-                                                        </ReactMarkdown>
+                                    // Toggle thinking panel collapse
+                                    const toggleThinkingCollapse = () => {
+                                        setMessages((prev) =>
+                                            prev.map((m) =>
+                                                m.id === msg.id
+                                                    ? { ...m, thinkingCollapsed: !m.thinkingCollapsed }
+                                                    : m
+                                            )
+                                        );
+                                    };
+
+                                    return (
+                                        <div key={msg.id} className={`${styles.messageRow} ${isUser ? styles.user : styles.assistant}`}>
+                                            <div className={styles.messageIcon}>
+                                                {iconSrc ? (
+                                                    <img src={iconSrc} alt={iconAlt} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--codec-green-mid)' }}>
+                                                        {iconAlt[0]}
                                                     </div>
                                                 )}
                                             </div>
-                                        )}
+                                            <div className={`${styles.message} ${isUser ? styles.user : styles.assistant}`}>
+                                                <span className={styles.messageSender}>
+                                                    {isUser ? "ME" : isSystem ? "SYSTEM" : persona?.codename}
+                                                </span>
 
-                                        {/* Thinking Error */}
-                                        {!isUser && thinkingError && messages.indexOf(msg) === messages.length - 1 && (
-                                            <div className={styles.thinkingError}>
-                                                ⚠️ {thinkingError}
+                                                {/* Thinking Panel */}
+                                                {!isUser && msg.thinking && (
+                                                    <div className={styles.thinkingPanel}>
+                                                        <div
+                                                            className={styles.thinkingHeader}
+                                                            onClick={toggleThinkingCollapse}
+                                                        >
+                                                            <span>🧠 {msg.thinkingCollapsed ? '思考過程を表示' : '思考中...'}</span>
+                                                            <span className={styles.thinkingToggle}>
+                                                                {msg.thinkingCollapsed ? '▶' : '▼'}
+                                                            </span>
+                                                        </div>
+                                                        {!msg.thinkingCollapsed && (
+                                                            <div className={styles.thinkingContent}>
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                    {msg.thinking}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Thinking Error */}
+                                                {!isUser && thinkingError && messages.indexOf(msg) === messages.length - 1 && (
+                                                    <div className={styles.thinkingError}>
+                                                        ⚠️ {thinkingError}
+                                                    </div>
+                                                )}
+
+                                                <div className={`${styles.messageContent} markdown-content`}>
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            code({ node, inline, className, children, ...props }: any) {
+                                                                const match = /language-(\w+)/.exec(className || '')
+                                                                return !inline && match ? (
+                                                                    <CodeBlock
+                                                                        language={match[1]}
+                                                                        value={String(children).replace(/\n$/, '')}
+                                                                    />
+                                                                ) : (
+                                                                    <code className={className} {...props}>
+                                                                        {children}
+                                                                    </code>
+                                                                )
+                                                            }
+                                                        }}
+                                                    >
+                                                        {/* Escape square brackets to prevent Markdown link parsing issues */}
+                                                        {(msg.content || (isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 ? "// RECEIVING TRANSMISSION... //" : ""))
+                                                            .replace(/\[/g, '\\[').replace(/\]/g, '\\]')}
+                                                    </ReactMarkdown>
+                                                    {isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 && (
+                                                        <span className={styles.cursorBlock}></span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        )}
-
-                                        <div className={`${styles.messageContent} markdown-content`}>
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    code({ node, inline, className, children, ...props }: any) {
-                                                        const match = /language-(\w+)/.exec(className || '')
-                                                        return !inline && match ? (
-                                                            <CodeBlock
-                                                                language={match[1]}
-                                                                value={String(children).replace(/\n$/, '')}
-                                                            />
-                                                        ) : (
-                                                            <code className={className} {...props}>
-                                                                {children}
-                                                            </code>
-                                                        )
-                                                    }
-                                                }}
-                                            >
-                                                {/* Escape square brackets to prevent Markdown link parsing issues */}
-                                                {(msg.content || (isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 ? "// RECEIVING TRANSMISSION... //" : ""))
-                                                    .replace(/\[/g, '\\[').replace(/\]/g, '\\]')}
-                                            </ReactMarkdown>
-                                            {isLoading && msg.role === 'assistant' && messages.indexOf(msg) === messages.length - 1 && (
-                                                <span className={styles.cursorBlock}></span>
-                                            )}
                                         </div>
+                                    );
+                                })}
+                                {isLoading && (
+                                    <div className={styles.loadingIndicator}>
+                                        {toolStatus ? (
+                                            <span className={styles.toolStatus}>{toolStatus}</span>
+                                        ) : (
+                                            <>
+                                                <span className={styles.loadingDot}></span>
+                                                <span className={styles.loadingDot}></span>
+                                                <span className={styles.loadingDot}></span>
+                                            </>
+                                        )}
                                     </div>
-                                </div>
-                            );
-                        })}
-                        {isLoading && (
-                            <div className={styles.loadingIndicator}>
-                                {toolStatus ? (
-                                    <span className={styles.toolStatus}>{toolStatus}</span>
-                                ) : (
-                                    <>
-                                        <span className={styles.loadingDot}></span>
-                                        <span className={styles.loadingDot}></span>
-                                        <span className={styles.loadingDot}></span>
-                                    </>
                                 )}
-                            </div>
+                                <div ref={messagesEndRef} />
+                            </>
                         )}
-                        <div ref={messagesEndRef} />
                     </div>
                     <div className={styles.chatInputArea}>
                         <input
@@ -682,8 +694,18 @@ export default function CodecPage() {
                                 key={persona.id}
                                 className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
                                 onClick={() => {
-                                    setCurrentPersona(persona);
+                                    if (currentPersona.id === persona.id || isCalling) return;
+
+                                    setIsCalling(true);
+                                    setCallingTarget(persona);
                                     playCallSound();
+
+                                    // Wait for sound duration (approx 1.5s) before switching
+                                    setTimeout(() => {
+                                        setCurrentPersona(persona);
+                                        setIsCalling(false);
+                                        setCallingTarget(null);
+                                    }, 1500);
                                 }}
                             >
                                 <div className={styles.contactIcon}>

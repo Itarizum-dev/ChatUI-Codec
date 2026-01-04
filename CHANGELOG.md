@@ -1,5 +1,11 @@
 # CODEC Version History
 
+## v0.10.0 - Calling Screen Animation (2026-01-04)
+- **Feature**: キャラクター切り替え時の「CALLING」画面演出
+  - メタルギア風の点滅する「CALLING」テキストと周波数を表示
+  - コール音再生中の1.5秒間、画面を占有して雰囲気を演出
+  - 演出終了後にキャラクターが切り替わる仕様に変更
+
 ## v0.9.5 - Sound Refinement & Autoplay Fix (2026-01-04)
 - **Audio**: Codecサウンドの調整
   - スタートアップ音 (`codec_open.mp3`) を短縮・調整（0.8s）
