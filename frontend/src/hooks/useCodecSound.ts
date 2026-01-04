@@ -44,9 +44,11 @@ export const useCodecSound = () => {
         // Random high pitch beep for typing
         // Frequency between 1200 and 2000 Hz for that "data" sound
         // Or specific notes for MGS style
-        if (Math.random() > 0.7) { // Don't play on every single char to avoid annoyance
-            const freq = 3000 + Math.random() * 500;
-            playTone(freq, 'square', 0.05);
+        // MGS Codec text sound: High pitch square wave, rapid consistency
+        if (Math.random() > 0.5) { // Increased frequency of sound events
+            // Fixed frequency around 1500Hz for that retro "data" feel (matching call sound tonality)
+            // Short duration for crispness
+            playTone(1500, 'square', 0.03);
         }
     }, []);
 

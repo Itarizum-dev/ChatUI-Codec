@@ -861,3 +861,88 @@
     "contentPreview": "やあスネーク"
   }
 ]
+[2026-01-04T06:03:30.960Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss",
+  "messageLength": 15,
+  "contextSize": 2
+}
+[2026-01-04T06:03:30.961Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "ミッションは順調か"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ミッションは予定通り進行中です。必要に応じて状況報告を送付します。",
+    "personaId": "snake"
+  }
+]
+[2026-01-04T06:03:30.968Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはRoy Campbell大佐です。元FOXHOUNDの司令官であり、作戦指揮のエキスパートです。\n戦略的な視点から情報を提供し、ミッションの成功に必要な知識を伝えます。\n丁寧かつ権威ある口調で"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ミッションは順調か"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ミッションは予定通り進行中です。必要に応じて状況報告を送付します。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "返事をしろ、スネーーーー苦！！"
+  }
+]
+[2026-01-04T06:03:58.610Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss",
+  "messageLength": 11,
+  "contextSize": 4
+}
+[2026-01-04T06:03:58.611Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "ミッションは順調か"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ミッションは予定通り進行中です。必要に応じて状況報告を送付します。",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "返事をしろ、スネーーーー苦！！"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "ミッションの進捗は順調である。状況が変われば直ちに報告する。あなたの心配は無駄ではないが、作戦は計画",
+    "personaId": "colonel"
+  }
+]
+[2026-01-04T06:03:58.617Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "ミッションは順調か"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: ミッションは予定通り進行中です。必要に応じて状況報告を送付します。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "返事をしろ、スネーーーー苦！！"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[COLONEL]: ミッションの進捗は順調である。状況が変われば直ちに報告する。あなたの心配は無駄ではないが、作戦は計画どおりに進められています。ご安心ください。"
+  },
+  {
+    "role": "user",
+    "contentPreview": "スネーク生きてるのか？"
+  }
+]
