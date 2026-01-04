@@ -44,6 +44,7 @@ export default function CodecPage() {
     };
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Dynamic model state
     const [modelsData, setModelsData] = useState<ModelsResponse | null>(null);
@@ -338,6 +339,11 @@ export default function CodecPage() {
         }
     };
 
+    const handleHelpClick = () => {
+        setInput('/help');
+        inputRef.current?.focus();
+    };
+
     // Calculate total tokens for the session
     const totalTokens = messages.reduce((acc, msg) => {
         return acc + (msg.metadata?.tokens?.total || 0);
@@ -443,6 +449,21 @@ export default function CodecPage() {
                                 <span>SIGNAL</span>
                                 <span>100%</span>
                             </div>
+                            <div className={styles.dataRow}>
+                                <span>CMD LIST</span>
+                                <span
+                                    onClick={handleHelpClick}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: 'var(--codec-green-dark)',
+                                        textDecoration: 'underline'
+                                    }}
+                                    className={styles.clickableValue}
+                                    title="Insert /help"
+                                >
+                                    /HELP
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </aside>
@@ -454,7 +475,8 @@ export default function CodecPage() {
                             <div className={styles.message}>
                                 <span className={styles.messageSender}>SYSTEM</span>
                                 <span className={styles.messageContent}>
-                                    {"// CODEC ONLINE - Ready for transmission //"}
+                                    {"// CODEC ONLINE - Ready for transmission //"} <br />
+                                    {"// Type /help for command list //"}
                                 </span>
                             </div>
                         )}
@@ -574,9 +596,10 @@ export default function CodecPage() {
                     </div>
                     <div className={styles.chatInputArea}>
                         <input
+                            ref={inputRef}
                             type="text"
                             className={styles.chatInput}
-                            placeholder="Enter message..."
+                            placeholder="Enter message... (Type /help)"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}

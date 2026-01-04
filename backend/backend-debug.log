@@ -770,3 +770,79 @@
     "contentPreview": "このデータベースにはどんなテーブルがありますか"
   }
 ]
+[2026-01-04T05:04:13.960Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss",
+  "messageLength": 1,
+  "contextSize": 7
+}
+[2026-01-04T05:04:13.961Z] [CONTEXT_DUMP] [
+  {
+    "role": "user",
+    "contentPreview": "このデータベースにはどんなテーブルがありますか"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "このデータベースに存在するテーブルは以下の3つです。  \n\n| テーブル名 | 主なカラムと説明 |",
+    "personaId": "colonel"
+  },
+  {
+    "role": "user",
+    "contentPreview": "このデータベースにはどんなテーブルがありますか"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[COLONEL]: 本データベースには以下の3テーブルが存在します。  \n\n| テーブル名 | 主",
+    "personaId": "snake"
+  },
+  {
+    "role": "user",
+    "contentPreview": "このデータベースにはどんなテーブルがありますか"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "このデータベースには **3 つ** のテーブルがあります。  \nそれぞれのスキーマ（CREATE ",
+    "personaId": "otacon"
+  },
+  {
+    "role": "system",
+    "contentPreview": "**Available Commands**\n\n- `/help`: Show this help "
+  }
+]
+[2026-01-04T05:04:13.966Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "このデータベースにはどんなテーブルがありますか"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[COLONEL]: このデータベースに存在するテーブルは以下の3つです。  \n\n| テーブル名 | 主なカラムと説明 |\n|------------|-----------------|\n| **c"
+  },
+  {
+    "role": "user",
+    "contentPreview": "このデータベースにはどんなテーブルがありますか"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[SNAKE]: [COLONEL]: 本データベースには以下の3テーブルが存在します。  \n\n| テーブル名 | 主キー | 主なカラム | 備考 |\n|-----------|--------|-"
+  },
+  {
+    "role": "user",
+    "contentPreview": "このデータベースにはどんなテーブルがありますか"
+  },
+  {
+    "role": "assistant",
+    "contentPreview": "[OTACON]: このデータベースには **3 つ** のテーブルがあります。  \nそれぞれのスキーマ（CREATE TABLE ステートメント）を簡単に紹介しますね。\n\n| テーブル名 | 主キー"
+  },
+  {
+    "role": "system",
+    "contentPreview": "**Available Commands**\n\n- `/help`: Show this help message\n- `/clear`: Clear conversation history"
+  },
+  {
+    "role": "user",
+    "contentPreview": "/"
+  }
+]
