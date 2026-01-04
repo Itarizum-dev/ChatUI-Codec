@@ -36,7 +36,7 @@ export default function CodecPage() {
     // Sound
     const { playTypeSound, playCallSound, playOpenSound, toggleMute } = useCodecSound();
     const [isMuted, setIsMuted] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
+    // const [isInitialized, setIsInitialized] = useState(false); // Removed overlay
 
     const handleMuteToggle = () => {
         const newState = !isMuted;
@@ -44,10 +44,10 @@ export default function CodecPage() {
         toggleMute(newState);
     };
 
-    const handleInitialize = () => {
-        setIsInitialized(true);
-        playOpenSound();
-    };
+    // const handleInitialize = () => {
+    //     setIsInitialized(true);
+    //     playOpenSound();
+    // };
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     // ... (rest of refs)
@@ -376,16 +376,7 @@ export default function CodecPage() {
 
 
 
-    if (!isInitialized) {
-        return (
-            <div className={styles.overlayContainer} onClick={handleInitialize}>
-                <div className={styles.overlayContent}>
-                    <h1 className={styles.overlayTitle}>INITIALIZE CODEC</h1>
-                    <p className={styles.overlaySubtitle}>CLICK TO START MISSION</p>
-                </div>
-            </div>
-        );
-    }
+
 
     return (
         <>
