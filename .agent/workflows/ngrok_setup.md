@@ -1,39 +1,39 @@
 ---
-description: How to share your local environment via ngrok
+description: ngrokを使ってローカル環境を外部に公開する方法
 ---
 
-# Codec UI - Remote Access via ngrok
+# Codec UI - ngrokを使った外部公開手順
 
-This workflow allows you to share your running local Codec UI with others via the internet, while keeping your local Ollama instance fully functional.
+このワークフローでは、ローカルのOllamaをそのまま使いながら、あなたのPCで動いているCodec UIをインターネット経由で友人に共有する方法を説明します。
 
-## Prerequisites
-- [x] ngrok installed (`brew install ngrok/ngrok/ngrok`)
-- [x] ngrok authenticated (`ngrok config add-authtoken <TOKEN>`)
+## 事前準備
+- [x] ngrokのインストール (`brew install ngrok/ngrok/ngrok`)
+- [x] ngrokの認証 (`ngrok config add-authtoken <TOKEN>`)
 
-## Steps
+## 手順
 
-1. **Start the App**
-   Ensure both frontend and backend are running normally.
+1. **アプリを起動する**
+   通常通り、FrontendとBackendの両方を起動しておいてください。
    ```bash
-   # Terminal 1 (Backend)
+   # ターミナル1 (Backend)
    cd backend && npm run dev
    
-   # Terminal 2 (Frontend)
+   # ターミナル2 (Frontend)
    cd frontend && npm run dev
    ```
 
-2. **Start ngrok Tunnel**
-   Open a new terminal and run:
+2. **ngrokトンネルを開始する**
+   新しいターミナルを開き、以下のコマンドを実行します。
    ```bash
    ngrok http 3000
    ```
    // turbo
    
-3. **Share the URL**
-   - Copy the `https://xxxx-xxxx.ngrok-free.app` URL shown in the terminal.
-   - Send it to your friend/device.
-   - **Important**: If they see a "Visit Site" warning page, they must click "Visit Site" to allow the connection.
+3. **URLを共有する**
+   - ターミナルに表示された `https://xxxx-xxxx.ngrok-free.app` というURLをコピーします。
+   - これを友人や自分のスマホに送ります。
+   - **重要**: 最初にアクセスした際、「Visit Site」という警告画面が出ることがあります。その場合はボタンを押して進んでください。
 
-## Troubleshooting
-- **OFFLINE Error**: Ensure `NEXT_PUBLIC_BACKEND_URL` in `frontend/.env` is empty. The app relies on the internal proxy.
-- **Mixed Content**: Do not use `http://localhost:3000` via ngrok. Always use the HTTPS URL provided by ngrok.
+## トラブルシューティング
+- **OFFLINEエラーが出る**: `frontend/.env` の `NEXT_PUBLIC_BACKEND_URL` が空になっているか確認してください。ここが空でないと、外部からの接続がブロックされます。
+- **Mixed Contentエラー**: ngrok経由でアクセスする際は、必ず `https` のURLを使用してください。`http://localhost:3000` は自分専用です。
