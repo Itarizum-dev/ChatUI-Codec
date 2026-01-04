@@ -34,15 +34,33 @@ export default function CodecPage() {
     const [thinkingError, setThinkingError] = useState<string | null>(null);
 
     // Sound
-    const { playTypeSound, playCallSound, toggleMute } = useCodecSound();
+    const { playTypeSound, playCallSound, playOpenSound, toggleMute } = useCodecSound();
     const [isMuted, setIsMuted] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     const handleMuteToggle = () => {
         const newState = !isMuted;
         setIsMuted(newState);
         toggleMute(newState);
     };
+
+    const handleInitialize = () => {
+        setIsInitialized(true);
+        playOpenSound();
+    };
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    // ... (rest of refs)
+
+    // ... (rest of state)
+
+    // (Omitted auto-play effect as it is replaced by handleInitialize)
+
+    // ... (rest of effects)
+
+
+
+
     const abortControllerRef = useRef<AbortController | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -95,9 +113,9 @@ export default function CodecPage() {
                 console.error("Failed to load history", e);
             }
         }
-        // Play Open Sound on load (interaction required usually, but try)
-        // playOpenSound(); 
-    }, []);
+        // Play Open Sound on load - Removed in favor of Initialization Overlay
+        // playOpenSound();
+    }, [playOpenSound]);
 
     useEffect(() => {
         if (messages.length > 0) {
@@ -355,6 +373,19 @@ export default function CodecPage() {
             .find((m) => m.role === "assistant" && m.metadata);
         return lastAssistant?.metadata;
     };
+
+
+
+    if (!isInitialized) {
+        return (
+            <div className={styles.overlayContainer} onClick={handleInitialize}>
+                <div className={styles.overlayContent}>
+                    <h1 className={styles.overlayTitle}>INITIALIZE CODEC</h1>
+                    <p className={styles.overlaySubtitle}>CLICK TO START MISSION</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -659,7 +690,10 @@ export default function CodecPage() {
                             <div
                                 key={persona.id}
                                 className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
-                                onClick={() => setCurrentPersona(persona)}
+                                onClick={() => {
+                                    setCurrentPersona(persona);
+                                    playCallSound();
+                                }}
                             >
                                 <div className={styles.contactIcon}>
                                     {persona.portraitUrl ? (

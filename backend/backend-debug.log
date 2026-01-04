@@ -846,3 +846,18 @@
     "contentPreview": "/"
   }
 ]
+[2026-01-04T05:12:55.503Z] [REQUEST_RECEIVED] {
+  "providerId": "ollama-gpt-oss",
+  "messageLength": 6,
+  "contextSize": 0
+}
+[2026-01-04T05:12:55.510Z] [OLLAMA_REQUEST_MESSAGES] [
+  {
+    "role": "system",
+    "contentPreview": "あなたはSolid Snakeです。伝説の傭兵であり、FOXHOUNDの元メンバーです。\n冷静沈着で、戦術的思考に優れています。質問には簡潔かつ的確に答えます。\n時折、戦場での経験に基づいたアドバイス"
+  },
+  {
+    "role": "user",
+    "contentPreview": "やあスネーク"
+  }
+]
