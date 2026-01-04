@@ -1,5 +1,11 @@
 # CODEC Version History
 
+## v1.1.0 - External Access & Security (2026-01-05)
+- **Feature**: 外部公開（External Access）機能のサポート
+  - ngrokを使用した一時公開用のプロキシ設定 (`/api` proxy) を実装
+  - ワークフローガイド `/ngrok_setup` を追加
+- **Security**: `.gitignore` の強化 (ログファイル、設定ファイルの除外)
+
 ## v1.0.2 - Visual Readability Polish (2026-01-04)
 - **UI**: 走査線（Scanline）エフェクトの不透明度を調整 (0.4 -> 0.2)
   - Wirelessな雰囲気を維持しつつ、テキストの視認性を向上
