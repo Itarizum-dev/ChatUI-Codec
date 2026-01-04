@@ -643,7 +643,12 @@ export default function CodecPage() {
                                 <div
                                     key={convo.id}
                                     className={`${styles.historyItem} ${convo.id === activeConversationId ? styles.activeHistory : ''}`}
-                                    onClick={() => setActiveConversationId(convo.id)}
+                                    onClick={() => {
+                                        if (convo.id !== activeConversationId) {
+                                            setActiveConversationId(convo.id);
+                                            playOpenSound();
+                                        }
+                                    }}
                                 >
                                     <span className={styles.historyTitle} title={convo.title}>
                                         {convo.title}

@@ -1,5 +1,9 @@
 # CODEC Version History
 
+## v1.0.1 - Conversation Switch Sound (2026-01-04)
+- **Audio**: 会話ログ切り替え時にも効果音（Start Sound）を再生するように変更
+  - 周波数を合わせる操作感を向上
+
 ## v1.0.0 - Codec Conversation System (2026-01-04)
 - **Feature**: 会話（周波数）タブ機能の実装
   - 複数の会話（LOGS）をサイドバーで管理可能に
