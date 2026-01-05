@@ -1,42 +1,74 @@
-# Codec Chat UI
+# CODEC Chat UI - Metal Gear Style AI Interface
 
-This project has been restructured into two parts:
+Metal Gear Solid 2の無線画面（CODEC）を再現した、AIチャットインターフェースです。
+ローカルLLM (Ollama) や、Gemini, Claude, OpenAI などの主要なAIモデルと会話ができます。
 
-- **frontend/**: Next.js application (UI).
-- **backend/**: Node.js Express application (Chat Logic).
+![Codec UI Screenshot](/frontend/public/og-image.png?raw=true)
 
-## Getting Started
+## 特徴
+- 📟 **Authentic Design**: MGS2の無線画面を忠実に再現したレトロで没入感のあるUI。
+- 🏠 **Local First**: Ollamaをサポートし、ローカル環境でプライバシーを守りながらAIと会話可能。
+- 🔗 **Multi-Provider**: Google Gemini, Anthropic Claude, OpenAI にも対応。
+- 🛠 **MCP Support**: Model Context Protocol (MCP) をサポートし、外部ツールとの連携が可能。
+- 🌍 **External Access**: ngrokを使用して、安全に外部からアクセス可能。
 
-You need to run both the frontend and backend services.
+## 必要条件
+- **Node.js**: v18以上
+- **Ollama**: ローカルLLMを使用する場合 (推奨)
 
-### 1. Start Backend
+## セットアップ (インストール)
+
+### 1. リポジトリのクローン
+```bash
+git clone https://github.com/Itarizum-dev/ChatUI-Codec.git
+cd ChatUI-Codec
+```
+
+### 2. 環境変数の設定
+BackendとFrontendそれぞれに設定ファイル (`.env`) を用意します。
+
+**Backend (APIキーなど)**
+```bash
+cd backend
+cp .env.example .env
+# .envファイルを編集して、必要なAPIキー (Google, Anthropic等) を入力してください
+```
+
+**Frontend (UI設定)**
+```bash
+cd ../frontend
+cp .env.example .env
+# 基本的にそのままでOKです
+```
+
+### 3. アプリケーションの起動
+BackendとFrontendを別々のターミナルで起動します。
+
+**Terminal 1 (Backend)**
 ```bash
 cd backend
 npm install
-# Copy .env.example to .env and add your API keys
-cp .env.example .env
 npm run dev
 ```
-Runs on `http://localhost:3001`.
 
-### 2. Start Frontend
+**Terminal 2 (Frontend)**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Runs on `http://localhost:3002` (or 3000 if available).
 
-## Architecture
+ブラウザで [http://localhost:3000](http://localhost:3000) にアクセスすると起動します。
 
-The frontend handles the UI and connects to the backend API at `http://localhost:3001/api/chat`.
-The backend handles communications with LLM providers (Ollama, Anthropic, Google).
+## 外部からのアクセス (ngrok)
+友人に画面を見せたり、スマホからアクセスしたい場合は `ngrok` を使います。
 
-## Ollama Configuration
+1. [ngrokのインストールと認証](https://ngrok.com/download)を済ませます。
+2. アプリ起動中に、新しいターミナルで以下を実行します：
+   ```bash
+   ngrok http 3000
+   ```
+3. 表示された `https://...` のURLにアクセスします。
 
-By default, the backend connects to Ollama at `localhost:11434`. If you're running the backend inside a devcontainer, you'll need to update the `.env` file:
-
-```bash
-# In backend/.env
-OLLAMA_HOST=host.docker.internal:11434
-```
+## ライセンス
+MIT License
