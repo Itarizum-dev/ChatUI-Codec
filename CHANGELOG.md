@@ -1,5 +1,10 @@
 # CODEC Version History
 
+## v1.3.1 - Docker Communication Fix (2026-01-07)
+- **Fix**: Frontend→Backend間のコンテナ通信問題を修正
+  - `INTERNAL_API_URL` をビルド引数として追加（Next.js rewriteのビルド時評価に対応）
+  - `backend-debug.log` のファイル権限問題を修正（非rootユーザー対応）
+
 ## v1.3.0 - Docker Support (2026-01-06)
 - **Feature**: Docker Compose によるワンコマンド起動をサポート
   - `docker compose up --build` でフロントエンド・バックエンドを一括起動

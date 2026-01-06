@@ -11,9 +11,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build-time environment variables (NEXT_PUBLIC_* are embedded at build time)
+# Build-time environment variables
+# NEXT_PUBLIC_API_URL: For client-side (browser) requests - uses localhost since browser is on host
+# INTERNAL_API_URL: For server-side rewrites - uses Docker service name for container-to-container
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ARG INTERNAL_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV INTERNAL_API_URL=${INTERNAL_API_URL}
 
 RUN npm run build
 

@@ -27,8 +27,10 @@ COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=expressjs:nodejs /app/package.json ./
 
 # Data directories will be mounted via docker-compose volumes
-# Create placeholder directories with correct ownership
-RUN mkdir -p data skills && chown -R expressjs:nodejs data skills
+# Create placeholder directories and log file with correct ownership
+RUN mkdir -p data skills && \
+    touch backend-debug.log && \
+    chown -R expressjs:nodejs data skills backend-debug.log
 
 USER expressjs
 

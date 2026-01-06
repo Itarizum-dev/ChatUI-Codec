@@ -23,8 +23,12 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=http://localhost:3001
+        - INTERNAL_API_URL=http://backend:3001
     ports:
       - "3000:3000"
+    environment:
+      # Runtime env (for reference, but rewrites are baked at build time)
+      - INTERNAL_API_URL=http://backend:3001
     depends_on:
       - backend
     restart: unless-stopped
