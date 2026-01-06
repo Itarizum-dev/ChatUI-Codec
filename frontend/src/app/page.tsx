@@ -60,6 +60,9 @@ export default function CodecPage() {
     const [showMcpSettings, setShowMcpSettings] = useState(false);
     const [toolStatus, setToolStatus] = useState<string | null>(null);
 
+    // Mobile Menu State
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
+
     // Thinking mode state (Ollama only)
     const [useThinking, setUseThinking] = useState(false);
     const [thinkingError, setThinkingError] = useState<string | null>(null);
@@ -572,7 +575,16 @@ export default function CodecPage() {
             <div className={styles.codecContainer}>
                 {/* Header */}
                 <header className={styles.codecHeader}>
-                    <span className={styles.codecMainTitle}>CODEC</span>
+                    <div className={styles.headerLeft}>
+                        {/* Mobile Menu Button */}
+                        <button
+                            className={styles.mobileMenuBtn}
+                            onClick={() => setShowMobileMenu(true)}
+                        >
+                            Menu
+                        </button>
+                        <span className={styles.codecMainTitle}>CODEC</span>
+                    </div>
                     <div className={styles.frequencyContainer}>
                         <span className={styles.frequencyValue}>
                             {currentPersona.frequency}
@@ -726,6 +738,133 @@ export default function CodecPage() {
                     </div>
                 </aside>
 
+                {/* Mobile Menu Overlay */}
+                {
+                    showMobileMenu && (
+                        <div className={styles.mobileMenuOverlay}>
+                            <div className={styles.mobileMenuHeader}>
+                                <span className={styles.mobileMenuTitle}>
+                                // SECURE CONNECTION
+                                </span>
+                                <button
+                                    className={styles.mobileMenuClose}
+                                    onClick={() => setShowMobileMenu(false)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className={styles.mobileMenuContent}>
+                                {/* Mobile History */}
+                                <div className={styles.mobileSection}>
+                                    <div className={styles.mobileSectionTitle}>LOGS</div>
+                                    <button
+                                        className={styles.newChatButton}
+                                        onClick={() => {
+                                            createNewConversation();
+                                            setShowMobileMenu(false);
+                                        }}
+                                    >
+                                        + NEW FREQ
+                                    </button>
+                                    <div className={styles.mobileHistoryList}>
+                                        {conversations.map(convo => (
+                                            <div
+                                                key={convo.id}
+                                                className={`${styles.historyItem} ${convo.id === activeConversationId ? styles.activeHistory : ''}`}
+                                                onClick={() => {
+                                                    if (convo.id !== activeConversationId) {
+                                                        setActiveConversationId(convo.id);
+                                                        playOpenSound();
+                                                    }
+                                                    setShowMobileMenu(false);
+                                                }}
+                                            >
+                                                <span className={styles.historyTitle}>
+                                                    {convo.title}
+                                                </span>
+                                                <button
+                                                    className={styles.deleteHistoryBtn}
+                                                    onClick={(e) => handleDeleteConversation(e, convo.id)}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Mobile Contacts */}
+                                <div className={styles.mobileSection}>
+                                    <div className={styles.mobileSectionTitle}>CONTACTS</div>
+                                    <div className={styles.mobileContactList}>
+                                        {activeTab === 'contacts' && PERSONAS.map((persona) => (
+                                            <div
+                                                key={persona.id}
+                                                className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
+                                                onClick={() => {
+                                                    if (isCalling) return;
+                                                    // If switching to a new persona, trigger call animation
+                                                    if (currentPersona.id !== persona.id) {
+                                                        setCallingTarget(persona);
+                                                        setIsCalling(true);
+                                                        playCallSound();
+                                                        setShowMobileMenu(false); // Close menu to see animation
+
+                                                        // After animation, switch
+                                                        setTimeout(() => {
+                                                            const p = PERSONAS.find(p => p.id === persona.id);
+                                                            if (p) setCurrentPersona(p);
+                                                            setIsCalling(false);
+                                                            setCallingTarget(null);
+                                                        }, 4000);
+                                                    } else {
+                                                        setShowMobileMenu(false);
+                                                    }
+                                                }}
+                                            >
+                                                <div className={styles.contactIcon}>
+                                                    {persona.portraitUrl ? (
+                                                        <img src={persona.portraitUrl} alt={persona.codename} />
+                                                    ) : (
+                                                        <span>{persona.codename[0]}</span>
+                                                    )}
+                                                </div>
+                                                <div className={styles.contactInfoMini}>
+                                                    <div className={styles.contactName}>{persona.codename}</div>
+                                                    <div className={styles.contactFreq}>{persona.frequency}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Mobile System Data */}
+                                <div className={styles.mobileSection}>
+                                    <div className={styles.mobileSectionTitle}>SYSTEM</div>
+                                    <div className={styles.systemData}>
+                                        <div className={styles.dataRow}>
+                                            <span>MUTE</span>
+                                            <span onClick={handleMuteToggle} style={{ textDecoration: 'underline' }}>
+                                                {isMuted ? 'ON' : 'OFF'}
+                                            </span>
+                                        </div>
+                                        <div className={styles.dataRow}>
+                                            <span>CMD LIST</span>
+                                            <span onClick={() => {
+                                                handleHelpClick();
+                                                setShowMobileMenu(false);
+                                            }} style={{ textDecoration: 'underline' }}>
+                                                /HELP
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+
                 {/* Center - Chat Area */}
                 <main className={styles.codecChatPanel}>
                     <div className={styles.chatMessages}>
@@ -829,6 +968,13 @@ export default function CodecPage() {
                                                                     <code className={className} {...props}>
                                                                         {children}
                                                                     </code>
+                                                                )
+                                                            },
+                                                            table({ children, ...props }: any) {
+                                                                return (
+                                                                    <div style={{ overflowX: 'auto', maxWidth: '100%', marginBottom: '1em', display: 'block' }}>
+                                                                        <table style={{ minWidth: '100%', width: 'max-content', whiteSpace: 'nowrap' }} {...props}>{children}</table>
+                                                                    </div>
                                                                 )
                                                             }
                                                         }}
@@ -985,97 +1131,122 @@ export default function CodecPage() {
                         </div>
                     </div>
                 </aside>
-            </div>
+            </div >
 
             {/* Config Modal - LLM Selection Only */}
-            {showSelector && (
-                <div className={styles.modalOverlay} onClick={() => setShowSelector(false)}>
-                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <span className={styles.modalTitle}>Encryption Module</span>
-                            <button
-                                className={styles.modalClose}
-                                onClick={() => setShowSelector(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
+            {
+                showSelector && (
+                    <div className={styles.modalOverlay} onClick={() => setShowSelector(false)}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <span className={styles.modalTitle}>Encryption Module</span>
+                                <button
+                                    className={styles.modalClose}
+                                    onClick={() => setShowSelector(false)}
+                                >
+                                    ✕
+                                </button>
+                            </div>
 
-                        <div className={styles.modalBody}>
-                            {modelsLoading ? (
-                                <div className={styles.providerList}>
-                                    <div className={styles.loadingIndicator}>
-                                        <span className={styles.loadingDot}></span>
-                                        <span className={styles.loadingDot}></span>
-                                        <span className={styles.loadingDot}></span>
-                                        <span style={{ marginLeft: 10 }}>Loading models...</span>
+                            <div className={styles.modalBody}>
+                                {modelsLoading ? (
+                                    <div className={styles.providerList}>
+                                        <div className={styles.loadingIndicator}>
+                                            <span className={styles.loadingDot}></span>
+                                            <span className={styles.loadingDot}></span>
+                                            <span className={styles.loadingDot}></span>
+                                            <span style={{ marginLeft: 10 }}>Loading models...</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : !selectedService ? (
-                                <div className={styles.providerList}>
-                                    {modelsData ? (
-                                        Object.entries(modelsData.providers)
-                                            .filter(([_, p]) => p.available)
-                                            .map(([key, provider]) => (
+                                ) : !selectedService ? (
+                                    <div className={styles.providerList}>
+                                        {modelsData ? (
+                                            Object.entries(modelsData.providers)
+                                                .filter(([_, p]) => p.available)
+                                                .map(([key, provider]) => (
+                                                    <div
+                                                        key={key}
+                                                        className={styles.providerOption}
+                                                        onClick={() => setSelectedService(key)}
+                                                    >
+                                                        <div className={styles.providerIcon}>
+                                                            {provider.name[0]}
+                                                        </div>
+                                                        <div className={styles.providerDetails}>
+                                                            <div className={styles.providerName}>
+                                                                {provider.name}
+                                                            </div>
+                                                            <div className={styles.providerMeta}>
+                                                                {provider.models.length} models available
+                                                            </div>
+                                                        </div>
+                                                        <div className={styles.arrow}>→</div>
+                                                    </div>
+                                                ))
+                                        ) : (
+                                            Array.from(new Set(availableProviders.map((p) => p.type))).map((type) => (
                                                 <div
-                                                    key={key}
+                                                    key={type}
                                                     className={styles.providerOption}
-                                                    onClick={() => setSelectedService(key)}
+                                                    onClick={() => setSelectedService(type)}
                                                 >
                                                     <div className={styles.providerIcon}>
-                                                        {provider.name[0]}
+                                                        {type[0].toUpperCase()}
                                                     </div>
                                                     <div className={styles.providerDetails}>
                                                         <div className={styles.providerName}>
-                                                            {provider.name}
+                                                            {type.toUpperCase()}
                                                         </div>
                                                         <div className={styles.providerMeta}>
-                                                            {provider.models.length} models available
+                                                            Select Model...
                                                         </div>
                                                     </div>
                                                     <div className={styles.arrow}>→</div>
                                                 </div>
                                             ))
-                                    ) : (
-                                        Array.from(new Set(availableProviders.map((p) => p.type))).map((type) => (
-                                            <div
-                                                key={type}
-                                                className={styles.providerOption}
-                                                onClick={() => setSelectedService(type)}
-                                            >
-                                                <div className={styles.providerIcon}>
-                                                    {type[0].toUpperCase()}
-                                                </div>
-                                                <div className={styles.providerDetails}>
-                                                    <div className={styles.providerName}>
-                                                        {type.toUpperCase()}
-                                                    </div>
-                                                    <div className={styles.providerMeta}>
-                                                        Select Model...
-                                                    </div>
-                                                </div>
-                                                <div className={styles.arrow}>→</div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            ) : (
-                                <>
-                                    <div
-                                        className={styles.providerOption}
-                                        style={{ marginBottom: '10px', border: '1px solid #333', opacity: 0.8 }}
-                                        onClick={() => setSelectedService(null)}
-                                    >
-                                        <div className={styles.providerIcon}>←</div>
-                                        <div className={styles.providerDetails}>
-                                            <div className={styles.providerName}>BACK</div>
-                                        </div>
+                                        )}
                                     </div>
-                                    <div className={styles.providerList} style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                        {modelsData && modelsData.providers[selectedService as keyof typeof modelsData.providers] ? (
-                                            modelsData.providers[selectedService as keyof typeof modelsData.providers].models.map((model) => {
-                                                const llm = modelToProvider(model);
-                                                return (
+                                ) : (
+                                    <>
+                                        <div
+                                            className={styles.providerOption}
+                                            style={{ marginBottom: '10px', border: '1px solid #333', opacity: 0.8 }}
+                                            onClick={() => setSelectedService(null)}
+                                        >
+                                            <div className={styles.providerIcon}>←</div>
+                                            <div className={styles.providerDetails}>
+                                                <div className={styles.providerName}>BACK</div>
+                                            </div>
+                                        </div>
+                                        <div className={styles.providerList} style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                            {modelsData && modelsData.providers[selectedService as keyof typeof modelsData.providers] ? (
+                                                modelsData.providers[selectedService as keyof typeof modelsData.providers].models.map((model) => {
+                                                    const llm = modelToProvider(model);
+                                                    return (
+                                                        <div
+                                                            key={llm.id}
+                                                            className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
+                                                            onClick={() => {
+                                                                setCurrentLLM(llm);
+                                                                setShowSelector(false);
+                                                            }}
+                                                        >
+                                                            <div className={styles.providerIcon}>
+                                                                {llm.type[0].toUpperCase()}
+                                                            </div>
+                                                            <div className={styles.providerDetails}>
+                                                                <div className={styles.providerName}>
+                                                                    {llm.name}
+                                                                </div>
+                                                                <div className={styles.providerMeta}>
+                                                                    {llm.model}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                availableProviders.filter(p => p.type === selectedService).map((llm) => (
                                                     <div
                                                         key={llm.id}
                                                         className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
@@ -1096,39 +1267,16 @@ export default function CodecPage() {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                );
-                                            })
-                                        ) : (
-                                            availableProviders.filter(p => p.type === selectedService).map((llm) => (
-                                                <div
-                                                    key={llm.id}
-                                                    className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
-                                                    onClick={() => {
-                                                        setCurrentLLM(llm);
-                                                        setShowSelector(false);
-                                                    }}
-                                                >
-                                                    <div className={styles.providerIcon}>
-                                                        {llm.type[0].toUpperCase()}
-                                                    </div>
-                                                    <div className={styles.providerDetails}>
-                                                        <div className={styles.providerName}>
-                                                            {llm.name}
-                                                        </div>
-                                                        <div className={styles.providerMeta}>
-                                                            {llm.model}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </>
-                            )}
+                                                ))
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* MCP Settings Modal */}
             <McpSettingsModal

@@ -47,8 +47,8 @@ body {
 /* CRT Screen Effect Container */
 .crt-screen {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100dvh;
   overflow: hidden;
   background: radial-gradient(ellipse at center, #001a0a 0%, #000800 50%, #000 100%);
 }

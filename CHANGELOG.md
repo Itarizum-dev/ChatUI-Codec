@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## v1.2.0 - Mobile Responsiveness (2026-01-06)
+- **UI**: モバイル対応（レスポンシブデザイン）の実装
+  - スマートフォン等での表示を最適化 (`100dvh` 対応、ノッチ回避)
+  - モバイル専用メニュー（LOGS, CONTACTS, SYSTEM）をヘッダーに追加
+  - サイドパネルをモバイル表示時に非表示にし、メニューからのアクセスに変更
+  - テーブル（表）の横スクロール対応
+
 ## v1.1.0 - External Access & Security (2026-01-05)
 - **Feature**: 外部公開（External Access）機能のサポート
   - ngrokを使用した一時公開用のプロキシ設定 (`/api` proxy) を実装
