@@ -1,5 +1,13 @@
 # CODEC Version History
 
+## v1.3.0 - Docker Support (2026-01-06)
+- **Feature**: Docker Compose によるワンコマンド起動をサポート
+  - `docker compose up --build` でフロントエンド・バックエンドを一括起動
+  - マルチステージビルドによる軽量イメージ（Next.js Standalone出力）
+  - 非rootユーザーでのコンテナ実行（セキュリティ強化）
+- **Config**: `.env.example` テンプレートを追加し、環境変数の設定を簡略化
+- **Docs**: READMEに「Docker クイックスタート」セクションを追加
+
 ## v1.2.1 - Thinking Mode Improvements & IME Fix (2026-01-06)
 - **Feature**: Ollama以外のプロバイダー（Anthropic, Google）でも `<think>` タグ解析によるThinkingモード表示をサポート
 - **Fix**: Ollamaの一部モデルでツール利用時に400エラーが発生する場合、自動的にツールなしでリトライするロジックを追加

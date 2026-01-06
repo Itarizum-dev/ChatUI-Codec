@@ -36,10 +36,43 @@ AIに特定のタスクを教え込むことができます。
 `/skills` ディレクトリにある `SKILL.md` に手順を記述することで、AIはその手順書を読み込み、複雑なタスクを自律的に実行できるようになります。
 
 ## 必要条件
-- **Node.js**: v18以上
-- **Ollama**: ローカルLLMを使用する場合 (推奨)
+- **Docker Desktop**: 推奨（ワンコマンドで起動可能）
+- または **Node.js**: v18以上（手動セットアップの場合）
+- **Ollama**: ローカルLLMを使用する場合
 
-## セットアップ (インストール)
+## クイックスタート (Docker を使用) 🐳
+
+Docker Desktopがインストールされていれば、以下のコマンドだけで起動できます。
+
+```bash
+# 1. リポジトリのクローン
+git clone https://github.com/Itarizum-dev/ChatUI-Codec.git
+cd ChatUI-Codec
+
+# 2. 環境変数の設定
+cp backend/.env.example backend/.env
+# backend/.env を編集して、必要なAPIキー (Google, Anthropic等) を入力
+
+# 3. ビルド＆起動
+docker compose up --build
+```
+
+ブラウザで [http://localhost:3000](http://localhost:3000) にアクセスすると起動します。
+
+### 停止方法
+```bash
+docker compose down
+```
+
+### Ollamaを使用する場合
+Docker版でローカルOllamaを使用するには、**ホスト側（Mac/Windows/Linux）でOllamaを起動しておく**必要があります。
+Docker Compose の設定により、自動的に `host.docker.internal` 経由でホストのOllamaに接続します。
+
+---
+
+## 手動セットアップ (Node.js を使用)
+
+Dockerを使わない場合は、以下の手順でセットアップできます。
 
 ### 1. リポジトリのクローン
 ```bash

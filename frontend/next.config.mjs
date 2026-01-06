@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    output: 'standalone', // Enable standalone output for Docker optimization
     async rewrites() {
         return [
             {
                 source: '/api/:path*',
-                destination: 'http://localhost:3001/api/:path*',
+                destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/:path*`,
             },
         ];
     },
