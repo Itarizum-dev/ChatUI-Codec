@@ -1,5 +1,11 @@
 # CODEC Version History
 
+## v1.2.1 - Thinking Mode Improvements & IME Fix (2026-01-06)
+- **Feature**: Ollama以外のプロバイダー（Anthropic, Google）でも `<think>` タグ解析によるThinkingモード表示をサポート
+- **Fix**: Ollamaの一部モデルでツール利用時に400エラーが発生する場合、自動的にツールなしでリトライするロジックを追加
+- **Fix**: 日本語IME入力中にEnterキーを押した際、意図せずメッセージが送信される問題を修正
+- **UI**: Thinkingモードボタンのツールチップから「Ollama only」を削除し、全プロバイダーで有効化
+
 ## v1.2.0 - Mobile Responsiveness (2026-01-06)
 - **UI**: モバイル対応（レスポンシブデザイン）の実装
   - スマートフォン等での表示を最適化 (`100dvh` 対応、ノッチ回避)

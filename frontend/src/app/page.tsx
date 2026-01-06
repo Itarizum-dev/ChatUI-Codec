@@ -67,6 +67,9 @@ export default function CodecPage() {
     const [useThinking, setUseThinking] = useState(false);
     const [thinkingError, setThinkingError] = useState<string | null>(null);
 
+    // IME Composition State for Japanese input
+    const [isComposing, setIsComposing] = useState(false);
+
     // Sound
     const { playTypeSound, playCallSound, playOpenSound, toggleMute } = useCodecSound();
     const [isMuted, setIsMuted] = useState(false);
@@ -398,7 +401,7 @@ export default function CodecPage() {
                     context: messages.slice(-10),
                     systemPrompt: currentPersona.systemPrompt,
                     useMcp: useMcp,
-                    useThinking: useThinking && currentLLM.type === 'ollama',
+                    useThinking: useThinking,
                 }),
                 signal: controller.signal,
             });
@@ -547,7 +550,7 @@ export default function CodecPage() {
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
-            if (e.nativeEvent.isComposing) return;
+            if (isComposing || e.nativeEvent.isComposing) return;
             e.preventDefault();
             handleSend();
         }
@@ -600,7 +603,7 @@ export default function CodecPage() {
                         <button
                             className={`${styles.mcpToggle} ${useThinking ? styles.active : ''}`}
                             onClick={() => setUseThinking(!useThinking)}
-                            title={useThinking ? 'Thinking Mode Enabled (Ollama only)' : 'Thinking Mode Disabled'}
+                            title={useThinking ? 'Thinking Mode Enabled' : 'Thinking Mode Disabled'}
                             style={{ marginLeft: '4px' }}
                         >
                             🧠 {useThinking ? 'ON' : 'OFF'}
@@ -1017,6 +1020,8 @@ export default function CodecPage() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
+                            onCompositionStart={() => setIsComposing(true)}
+                            onCompositionEnd={() => setIsComposing(false)}
                             disabled={isLoading}
                         />
                         {isLoading ? (
