@@ -86,7 +86,10 @@ export const FALLBACK_PROVIDERS: LLMProvider[] = [
 export const DEFAULT_PERSONA = PERSONAS[0];
 export const DEFAULT_LLM = FALLBACK_PROVIDERS[0];
 
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '';
+// Backend URL - always use relative path for API access
+// This ensures the app works both locally and via ngrok/external access
+// All requests go through Next.js rewrites which route to the backend
+export const BACKEND_URL = '';
 
 // ===== 動的モデル取得関数 =====
 export async function fetchAvailableModels(): Promise<ModelsResponse | null> {

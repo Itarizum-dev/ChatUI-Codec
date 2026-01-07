@@ -1,5 +1,11 @@
 # CODEC Version History
 
+## v1.3.2 - Ngrok External Access Fix (2026-01-07)
+- **Fix**: ngrok経由でのバックエンド接続問題を修正
+  - `BACKEND_URL` を空文字列に固定し、すべてのAPIリクエストを相対パス（`/api/*`）経由に変更
+  - これにより、ngrok等の外部アクセス時もNext.jsリライト経由でバックエンドに正しくルーティング
+  - `docker-compose.yml` から `NEXT_PUBLIC_API_URL` ビルド引数を削除
+
 ## v1.3.1 - Docker Communication Fix (2026-01-07)
 - **Fix**: Frontend→Backend間のコンテナ通信問題を修正
   - `INTERNAL_API_URL` をビルド引数として追加（Next.js rewriteのビルド時評価に対応）
