@@ -28,7 +28,7 @@ Metal Gear Solid 2の無線画面（CODEC）を再現した、AIチャットイ�
 
 ### 🧠 Thinking Mode (思考モード)
 **「🧠 ON/OFF」** ボタンで切り替えます (Ollama専用)。
-ローカルLLM (DeepSeek-R1等) のChain of Thought（思考プロセス）を視覚化します。AIがどのように答えを導き出したのか、その思考の過程をログとして表示します。
+ローカルLLM (gpt-oss等) のChain of Thought（思考プロセス）を視覚化します。AIがどのように答えを導き出したのか、その思考の過程をログとして表示します。
 ※ LLMが `<think>` タグを出力する場合のみ有効です。
 
 ### ⚡️ Skills (スキルシステム)
