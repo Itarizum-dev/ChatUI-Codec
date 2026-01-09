@@ -86,15 +86,25 @@ export const FALLBACK_PROVIDERS: LLMProvider[] = [
 export const DEFAULT_PERSONA = PERSONAS[0];
 export const DEFAULT_LLM = FALLBACK_PROVIDERS[0];
 
-// Backend URL - always use relative path for API access
-// This ensures the app works both locally and via ngrok/external access
-// All requests go through Next.js rewrites which route to the backend
+// Backend URL for API access
+// - Local dev (localhost:3000): Direct access to localhost:3001 for streaming
+// - Docker/ngrok (other hosts): Relative path through Next.js rewrites
+export const getBackendUrl = (): string => {
+    if (typeof window === 'undefined') return ''; // SSR: use relative path
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+        return 'http://localhost:3001'; // Direct access for streaming
+    }
+    return ''; // Use Next.js rewrites for Docker/ngrok
+};
+
+// Legacy: For backwards compatibility (use getBackendUrl() instead)
 export const BACKEND_URL = '';
 
 // ===== 動的モデル取得関数 =====
 export async function fetchAvailableModels(): Promise<ModelsResponse | null> {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/models`, {
+        const response = await fetch(`${getBackendUrl()}/api/models`, {
             signal: AbortSignal.timeout(10000),
         });
         if (!response.ok) return null;

@@ -11,10 +11,10 @@ services:
       - PORT=3001
       - OLLAMA_HOST=host.docker.internal:11434
     extra_hosts:
-      - "host.docker.internal:host-gateway" # Linux support
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./backend/data:/app/data # MCP settings persistence
-      - ./backend/skills:/app/skills # Skills persistence
+      - ./backend/data:/app/data
+      - ./backend/skills:/app/skills
     restart: unless-stopped
 
   frontend:
@@ -25,9 +25,6 @@ services:
         - INTERNAL_API_URL=http://backend:3001
     ports:
       - "3000:3000"
-    environment:
-      # Runtime env (for reference, but rewrites are baked at build time)
-      - INTERNAL_API_URL=http://backend:3001
     depends_on:
       - backend
     restart: unless-stopped

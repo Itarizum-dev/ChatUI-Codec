@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import styles from "./page.module.css";
 import { Message, LLMProvider, Persona } from "@/types";
-import { PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
+import { PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, getBackendUrl, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import McpSettingsModal from '@/components/McpSettingsModal';
@@ -271,7 +271,7 @@ export default function CodecPage() {
 
             // Background LLM call for better summary
             // Using a separate controller to not interfere with main chat
-            const response = await fetch(`${BACKEND_URL}/api/chat`, {
+            const response = await fetch(`${getBackendUrl()}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -391,7 +391,7 @@ export default function CodecPage() {
         }, CONNECTION_TIMEOUT);
 
         try {
-            const response = await fetch(`${BACKEND_URL}/api/chat`, {
+            const response = await fetch(`${getBackendUrl()}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

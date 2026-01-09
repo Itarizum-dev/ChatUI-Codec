@@ -1,9 +1,8 @@
 /* ===================================
    CODEC - Global Styles
    Metal Gear 2 Authentic Codec Theme
+   Fonts loaded via next/font/google in layout.tsx
    =================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
 
 :root {
   /* MG2 Codec Color Palette - Authentic Green CRT */

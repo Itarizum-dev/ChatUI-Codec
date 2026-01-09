@@ -1,5 +1,16 @@
 # CODEC Version History
 
+## v1.4.0 - Docker & Streaming Improvements (2026-01-10)
+- **Refactor**: Dockerfile構成の簡略化・整理
+  - Backend: 3ステージ→2ステージに削減（冗長なdepsステージを削除）
+  - Frontend: 不要な`NEXT_PUBLIC_API_URL`ビルド引数を削除
+  - docker-compose: 不要なランタイム環境変数を削除
+- **Fix**: ローカル開発時のストリーミング通信を修正
+  - `getBackendUrl()`関数を導入し、localhost時は直接バックエンドにアクセス
+  - Docker/ngrok経由時はNext.jsリライト経由でルーティング
+- **Cleanup**: `.devcontainer/`を削除（Docker Composeに移行済み）
+- **Fix**: CSS `@import`警告を修正（`next/font/google`と重複していたため削除）
+
 ## v1.3.2 - Ngrok External Access Fix (2026-01-07)
 - **Fix**: ngrok経由でのバックエンド接続問題を修正
   - `BACKEND_URL` を空文字列に固定し、すべてのAPIリクエストを相対パス（`/api/*`）経由に変更

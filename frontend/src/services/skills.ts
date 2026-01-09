@@ -1,4 +1,4 @@
-import { BACKEND_URL } from '@/config/providers';
+import { getBackendUrl } from '@/config/providers';
 import { Skill } from '@/types/skills';
 
 /**
@@ -6,7 +6,7 @@ import { Skill } from '@/types/skills';
  */
 export async function fetchSkills(): Promise<Array<{ name: string; description: string }>> {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/skills`);
+        const response = await fetch(`${getBackendUrl()}/api/skills`);
         if (!response.ok) {
             throw new Error(`Failed to fetch skills: ${response.statusText}`);
         }
@@ -23,7 +23,7 @@ export async function fetchSkills(): Promise<Array<{ name: string; description: 
  */
 export async function fetchSkillDetails(name: string): Promise<Skill | null> {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/skills/${name}`);
+        const response = await fetch(`${getBackendUrl()}/api/skills/${name}`);
         if (!response.ok) {
             throw new Error(`Failed to fetch skill details: ${response.statusText}`);
         }
@@ -40,7 +40,7 @@ export async function fetchSkillDetails(name: string): Promise<Skill | null> {
  */
 export async function initSkill(name: string): Promise<{ path: string; name: string } | null> {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/skills/init`, {
+        const response = await fetch(`${getBackendUrl()}/api/skills/init`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name }),
