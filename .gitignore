@@ -37,3 +37,7 @@ ngrok_*.txt
 ngrok.yml
 *.log
 backend/data/mcp-settings.json
+
+# SBOM (can be regenerated)
+sbom-*.json
+SBOM_SUMMARY.md
