@@ -27,6 +27,11 @@
 - **Fix**: `/skill` コマンド実行時にスキル名ではなく `[object Object]` と表示される不具合を修正
   - バックエンドからのレスポンス形式に合わせて、正しく `name` と `description` を表示するように変更
 
+## v1.6.5 - UI Polish: Skill Table (2026-01-10)
+- **Improvement**: `/skill` コマンドの出力形式をリストからテーブルに変更
+  - Name, Description, Path を整列して表示し、可読性を向上
+
+
 
 
 ## v1.6.0 - Persona Editor & UI Polish (2026-01-10)

@@ -374,9 +374,12 @@ export default function CodecPage() {
                 }
                 const skills = data.skills as SkillSummary[];
 
-                const content = "**Available Skills**\n\n" + (skills.length > 0
-                    ? skills.map(s => `- **${s.name}**: ${s.description}`).join('\n')
-                    : "No skills found.");
+                const header = "| Name | Description | Path |\n| :--- | :--- | :--- |";
+                const rows = skills.length > 0
+                    ? skills.map(s => `| **${s.name}** | ${s.description} | \`${s.path.split('/').pop()}\` |`).join('\n')
+                    : "| - | No skills found | - |";
+
+                const content = "**Available Skills**\n\n" + header + "\n" + rows;
 
                 const sysMessage: Message = {
                     id: crypto.randomUUID(),
