@@ -196,12 +196,12 @@ export default function PersonaEditorModal({
                                     <div className={styles.editForm}>
                                         <div className={styles.editHeader}>
                                             <span>Editing: {persona.codename}</span>
-                                            {persona.isBuiltIn && (
+                                            {persona.isBuiltIn && persona.id === 'system' && (
                                                 <span className={styles.builtinBadge}>BUILT-IN</span>
                                             )}
                                         </div>
 
-                                        {!persona.isBuiltIn && (
+                                        {(!persona.isBuiltIn || persona.id !== 'system') && (
                                             <>
                                                 {/* Portrait Upload for custom */}
                                                 <div className={styles.imageSection}>
@@ -314,7 +314,7 @@ export default function PersonaEditorModal({
                                             <div className={styles.personaDetails}>
                                                 <div className={styles.personaCodename}>
                                                     {persona.codename}
-                                                    {persona.isBuiltIn && (
+                                                    {persona.isBuiltIn && persona.id === 'system' && (
                                                         <span className={styles.builtinBadge}>BUILT-IN</span>
                                                     )}
                                                 </div>
