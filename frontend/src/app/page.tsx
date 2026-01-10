@@ -977,8 +977,10 @@ export default function CodecPage() {
                                     const persona = !isUser && !isSystem
                                         ? (personas.find(p => p.id === msg.personaId) || currentPersona)
                                         : null;
+                                    // 暫定対応: ユーザーの自分の肖像画 (後で設定可能にする)
+                                    const USER_PORTRAIT = "/portraits/agent.png";
                                     const iconSrc = isUser
-                                        ? "/portraits/soldier_me.png"
+                                        ? USER_PORTRAIT
                                         : (persona?.portraitData || persona?.portraitUrl || null);
                                     const iconAlt = isUser ? "ME" : isSystem ? "SYS" : (persona?.codename || "Unknown");
 
