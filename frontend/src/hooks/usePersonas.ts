@@ -67,9 +67,12 @@ export function usePersonas(): UsePersonasReturn {
                 const savedCustom = localStorage.getItem(STORAGE_KEY);
                 let parsedCustom: Persona[] = savedCustom ? JSON.parse(savedCustom) : [];
 
-                // Add default user persona if not exists
-                const hasUser = parsedCustom.some(p => p.isUser);
-                if (!hasUser) {
+                // Add default user persona if not exists anywhere (neither in file nor custom)
+                // ファイルまたはカスタムストレージに isUser なペルソナが存在するかチェック
+                const hasUserInFile = loadedFilePersonas.some(p => p.isUser);
+                const hasUserInCustom = parsedCustom.some(p => p.isUser);
+
+                if (!hasUserInFile && !hasUserInCustom) {
                     const defaultUser: Persona = {
                         id: 'user-me',
                         name: 'ME',

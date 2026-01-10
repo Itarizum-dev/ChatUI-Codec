@@ -44,3 +44,5 @@ SBOM_SUMMARY.md
 
 # Persona Data
 frontend/public/data/personas.json
+frontend/public/data/images/*
+!frontend/public/data/images/.gitkeep

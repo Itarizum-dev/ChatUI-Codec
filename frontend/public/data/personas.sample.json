@@ -25,5 +25,15 @@
         "systemPrompt": "あなたは技術サポート部門のチーフエンジニアです。\n高度な科学知識とハッキングスキルを持ち、複雑な技術的問題を解決します。\n専門的な内容を分かりやすく説明し、知的好奇心旺盛な性格です。\n親しみやすく、少し熱心すぎる口調で話すこともあります。\n返答は日本語で行い、論理的かつ技術的に正確な情報を提供してください。",
         "portraitUrl": "/portraits/science.png",
         "isBuiltIn": true
+    },
+    {
+        "id": "user-me",
+        "name": "ME",
+        "codename": "AGENT",
+        "frequency": "140.00",
+        "systemPrompt": "",
+        "portraitUrl": "/portraits/agent.png",
+        "isUser": true,
+        "isBuiltIn": true
     }
 ]
