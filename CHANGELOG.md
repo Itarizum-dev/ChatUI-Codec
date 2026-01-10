@@ -1,5 +1,15 @@
 # CODEC Version History
 
+## v1.6.1 - UI Fixes & Resilient LLM Selection (2026-01-10)
+- **Fix**: オフライン判定時のLLM選択ロジックを改善
+  - バックエンドがモデル一覧を返さない場合（オフライン等）でも、強制的にOllamaを選択可能にするフォールバックロジックを実装
+  - モデルリストが空の場合、静的定義（`FALLBACK_PROVIDERS`）を表示するように修正
+- **Fix**: ヘッダーのレイアウトと挙動を修正
+  - 各ボタン（MCP, THINK, CONFIG）に説明用ツールチップを追加
+  - ボタンのレスポンシブ配置（折り返し対応）を改善
+  - LLM CONFIGボタン押下時に確実にモデル一覧を再取得 (`refreshModels()`) するよう修正
+- **Backend**: Ollamaモデル取得時のタイムアウトを5秒から30秒に延長し、Docker環境での接続安定性を向上
+
 ## v1.6.0 - Persona Editor & UI Polish (2026-01-10)
 - **Feature**: ペルソナエディタ機能の実装
   - コンタクトリストに追加された `[ MEMORY EDITOR ]` ボタンから起動

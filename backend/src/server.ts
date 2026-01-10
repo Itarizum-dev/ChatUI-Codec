@@ -104,21 +104,27 @@ interface ModelInfo {
 async function fetchOllamaModels(): Promise<ModelInfo[]> {
     const ollamaHost = process.env.OLLAMA_HOST || 'localhost:11434';
     try {
+        console.log(`[Models] Fetching Ollama models from http://${ollamaHost}/api/tags...`);
         const response = await fetch(`http://${ollamaHost}/api/tags`, {
-            signal: AbortSignal.timeout(5000),
+            signal: AbortSignal.timeout(30000), // Extended timeout to 30s
         });
-        if (!response.ok) return [];
+        if (!response.ok) {
+            console.log(`[Models] Ollama API error: ${response.status} ${response.statusText}`);
+            return [];
+        }
 
         const data = await response.json() as { models: Array<{ name: string; model: string }> };
-        return (data.models || []).map(m => ({
+        const models = (data.models || []).map(m => ({
             id: `ollama-${m.name.replace(/[/:]/g, '-')}`,
             name: m.name,
             provider: 'ollama' as const,
             model: m.name,
             available: true,
         }));
+        console.log(`[Models] Fetched ${models.length} Ollama models`);
+        return models;
     } catch (error) {
-        console.log('[Models] Ollama not available:', (error as Error).message);
+        console.warn(`[Models] Ollama connection failed (http://${ollamaHost}):`, (error as Error).message);
         return [];
     }
 }

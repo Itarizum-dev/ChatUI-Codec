@@ -76,6 +76,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+    /* Ensure it doesn't overflow parent */
 }
 
 .frequencyValue {
@@ -513,8 +517,9 @@
     border: 2px solid var(--codec-green-dark);
     /* No padding to allow list items to span fill width if needed, but keeping 10px for safe area */
     padding: 10px;
+    padding: 10px;
     position: relative;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .codecContactPanel::before {
@@ -530,6 +535,25 @@
             rgba(0, 255, 65, 0.02) 3px,
             rgba(0, 255, 65, 0.02) 6px);
     pointer-events: none;
+}
+
+.panelContent {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 4px;
+    /* Scrollbar space */
+    display: flex;
+    flex-direction: column;
+}
+
+.panelContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panelContent::-webkit-scrollbar-thumb {
+    background: var(--codec-green-dim);
+    border-radius: 3px;
 }
 
 .contactListTitle {
@@ -824,6 +848,15 @@
     background: rgba(0, 20, 10, 0.8);
 }
 
+
+
+.providerUnavailable {
+    opacity: 0.6;
+    cursor: pointer;
+    /* filter: grayscale(0.8); */
+    border-style: dashed;
+}
+
 .providerDetails {
     flex: 1;
 }
@@ -984,6 +1017,13 @@
 }
 
 /* ===== MCP TOGGLE AND SETTINGS ===== */
+.mcpGroup {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    /* Space to next group */
+}
+
 .mcpToggle {
     background: transparent;
     border: 1px solid var(--codec-green-dark);
@@ -994,12 +1034,14 @@
     cursor: pointer;
     letter-spacing: 1px;
     transition: all 0.2s;
-    margin-right: 4px;
+    /* margin-right removed for grouping */
+    /* Connect to settings btn */
 }
 
 .mcpToggle:hover {
     border-color: var(--codec-green-mid);
     color: var(--codec-green-mid);
+    /* Ensure right border doesn't appear on hover if we want seamless */
 }
 
 .mcpToggle.active {
@@ -1007,17 +1049,91 @@
     color: var(--codec-green-bright);
     background: rgba(0, 255, 65, 0.1);
     box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+    border-right: none;
 }
 
 .mcpSettingsBtn {
     background: transparent;
     border: 1px solid var(--codec-green-dark);
     color: var(--codec-green-dim);
-    font-size: 1rem;
-    padding: 4px 8px;
+    /* Match frequencyButton style */
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    letter-spacing: 2px;
+
+    height: auto;
+    /* Reset fixed height if any */
     cursor: pointer;
     transition: all 0.2s;
-    margin-right: 8px;
+    /* margin-right handled by group */
+}
+
+/* Match frequencyButton style for LLM Config */
+.llmConfigBtn {
+    background: transparent;
+    border: 1px solid var(--codec-green-dark);
+    color: var(--codec-green-mid);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.llmConfigBtn:hover {
+    border-color: var(--codec-green-bright);
+    color: var(--codec-green-bright);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+/* ===== HEADER TOOLTIPS ===== */
+.tooltipContainer {
+    position: relative;
+    display: flex;
+    /* Or inline-flex depending on layout */
+    align-items: center;
+}
+
+.tooltipText {
+    visibility: hidden;
+    width: max-content;
+    max-width: 250px;
+    /* Slightly wider for Japanese text */
+    background-color: rgba(0, 15, 5, 0.95);
+    color: var(--codec-green-bright);
+    text-align: center;
+    border: 1px solid var(--codec-green-mid);
+    padding: 6px 10px;
+    position: absolute;
+    z-index: 2000;
+    top: 130%;
+    /* Below the button with gap */
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    line-height: 1.4;
+    opacity: 0;
+    transition: opacity 0.2s, top 0.2s;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+    white-space: normal;
+}
+
+.tooltipContainer:hover .tooltipText {
+    visibility: visible;
+    opacity: 1;
+    top: 120%;
+    /* Slight slide up effect */
+}
+
+/* Tooltip Modifier for Right-aligned elements to prevent overflow */
+.tooltipRight .tooltipText {
+    left: auto;
+    right: 0;
+    transform: none;
 }
 
 .mcpSettingsBtn:hover {

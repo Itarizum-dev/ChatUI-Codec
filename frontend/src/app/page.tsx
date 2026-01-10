@@ -58,7 +58,7 @@ export default function CodecPage() {
     const [selectedService, setSelectedService] = useState<string | null>(null);
 
     // MCP state
-    const [useMcp, setUseMcp] = useState(false);
+    const [useMcp, setUseMcp] = useState(true);
     const [showMcpSettings, setShowMcpSettings] = useState(false);
     const [toolStatus, setToolStatus] = useState<string | null>(null);
 
@@ -599,37 +599,46 @@ export default function CodecPage() {
                             {currentPersona.frequency}
                         </span>
                         <span className={styles.frequencyLabel}>MHz</span>
-                        <button
-                            className={`${styles.mcpToggle} ${useMcp ? styles.active : ''}`}
-                            onClick={() => setUseMcp(!useMcp)}
-                            title={useMcp ? 'MCP Enabled' : 'MCP Disabled'}
-                        >
-                            MCP {useMcp ? 'ON' : 'OFF'}
-                        </button>
-                        <button
-                            className={`${styles.mcpToggle} ${useThinking ? styles.active : ''}`}
-                            onClick={() => setUseThinking(!useThinking)}
-                            title={useThinking ? 'Thinking Mode Enabled' : 'Thinking Mode Disabled'}
-                            style={{ marginLeft: '4px' }}
-                        >
-                            🧠 {useThinking ? 'ON' : 'OFF'}
-                        </button>
-                        <button
-                            className={styles.mcpSettingsBtn}
-                            onClick={() => setShowMcpSettings(true)}
-                            title="MCP Settings"
-                        >
-                            ⚙
-                        </button>
-                        <button
-                            className={styles.frequencyButton}
-                            onClick={() => {
-                                setShowSelector(true);
-                                setSelectedService(null);
-                            }}
-                        >
-                            LLM CONFIG
-                        </button>
+                        <div className={`${styles.mcpGroup} ${styles.tooltipContainer}`}>
+                            <button
+                                className={styles.mcpSettingsBtn}
+                                onClick={() => setShowMcpSettings(true)}
+                                title="" // Disable default title
+                            >
+                                MCP SETTING
+                            </button>
+                            <span className={styles.tooltipText}>
+                                拡張機能(MCP)の管理・設定を行います
+                            </span>
+                        </div>
+                        <div className={styles.tooltipContainer}>
+                            <button
+                                className={`${styles.mcpToggle} ${useThinking ? styles.active : ''}`}
+                                onClick={() => setUseThinking(!useThinking)}
+                                title="" // Disable default title
+                                style={{ marginRight: '8px' }}
+                            >
+                                {useThinking ? 'THINK ON 🧠' : 'THINK OFF'}
+                            </button>
+                            <span className={styles.tooltipText}>
+                                思考プロセス(Chain of Thought)を表示します
+                            </span>
+                        </div>
+                        <div className={`${styles.tooltipContainer} ${styles.tooltipRight}`}>
+                            <button
+                                className={styles.llmConfigBtn}
+                                onClick={() => {
+                                    refreshModels();
+                                    setShowSelector(true);
+                                }}
+                                title="" // Disable default title
+                            >
+                                LLM CONFIG
+                            </button>
+                            <span className={styles.tooltipText}>
+                                AIモデルの変更やパラメータ設定を行います
+                            </span>
+                        </div>
                     </div>
                     <span className={styles.codecTitle}>
                         {currentPersona.codename}
@@ -1093,62 +1102,64 @@ export default function CodecPage() {
                         </span>
                     </div>
 
-                    {activeTab === 'contacts' ? (
-                        <>
-                            {personas.map((persona) => (
+                    <div className={styles.panelContent}>
+                        {activeTab === 'contacts' ? (
+                            <>
+                                {personas.map((persona) => (
+                                    <div
+                                        key={persona.id}
+                                        className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
+                                        onClick={() => {
+                                            if (currentPersona.id === persona.id || isCalling) return;
+
+                                            setIsCalling(true);
+                                            setCallingTarget(persona);
+                                            playCallSound();
+
+                                            // Wait for sound duration (approx 1.5s) before switching
+                                            setTimeout(() => {
+                                                setCurrentPersona(persona);
+                                                setIsCalling(false);
+                                                setCallingTarget(null);
+                                            }, 1500);
+                                        }}
+                                    >
+                                        <div className={styles.contactIcon}>
+                                            {(persona.portraitData || persona.portraitUrl) ? (
+                                                <img src={persona.portraitData || persona.portraitUrl} alt={persona.codename} />
+                                            ) : (
+                                                <div className={styles.fallbackIcon}>
+                                                    {persona.codename[0]}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className={styles.contactInfoMini}>
+                                            <div className={styles.contactName}>{persona.codename}</div>
+                                            <div className={styles.contactFreq}>{persona.frequency}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {/* Memory Editor Button - Integrated into list */}
                                 <div
-                                    key={persona.id}
-                                    className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
-                                    onClick={() => {
-                                        if (currentPersona.id === persona.id || isCalling) return;
-
-                                        setIsCalling(true);
-                                        setCallingTarget(persona);
-                                        playCallSound();
-
-                                        // Wait for sound duration (approx 1.5s) before switching
-                                        setTimeout(() => {
-                                            setCurrentPersona(persona);
-                                            setIsCalling(false);
-                                            setCallingTarget(null);
-                                        }, 1500);
+                                    className={styles.contactItem}
+                                    style={{
+                                        border: '1px dashed var(--codec-green-dim)',
+                                        opacity: 0.7,
+                                        justifyContent: 'center',
+                                        marginTop: '8px',
+                                        cursor: 'pointer'
                                     }}
+                                    onClick={() => setShowPersonaEditor(true)}
                                 >
-                                    <div className={styles.contactIcon}>
-                                        {(persona.portraitData || persona.portraitUrl) ? (
-                                            <img src={persona.portraitData || persona.portraitUrl} alt={persona.codename} />
-                                        ) : (
-                                            <div className={styles.fallbackIcon}>
-                                                {persona.codename[0]}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={styles.contactInfoMini}>
-                                        <div className={styles.contactName}>{persona.codename}</div>
-                                        <div className={styles.contactFreq}>{persona.frequency}</div>
-                                    </div>
+                                    <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
+                                        [ MEMORY EDITOR ]
+                                    </span>
                                 </div>
-                            ))}
-                            {/* Memory Editor Button - Integrated into list */}
-                            <div
-                                className={styles.contactItem}
-                                style={{
-                                    border: '1px dashed var(--codec-green-dim)',
-                                    opacity: 0.7,
-                                    justifyContent: 'center',
-                                    marginTop: '8px',
-                                    cursor: 'pointer'
-                                }}
-                                onClick={() => setShowPersonaEditor(true)}
-                            >
-                                <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
-                                    [ MEMORY EDITOR ]
-                                </span>
-                            </div>
-                        </>
-                    ) : (
-                        <SkillList onSelectSkill={setViewingSkill} />
-                    )}
+                            </>
+                        ) : (
+                            <SkillList onSelectSkill={setViewingSkill} />
+                        )}
+                    </div>
 
                     <div className={styles.panelFooter}>
                         <div className={styles.debugPanel}>
@@ -1207,11 +1218,11 @@ export default function CodecPage() {
                                     <div className={styles.providerList}>
                                         {modelsData ? (
                                             Object.entries(modelsData.providers)
-                                                .filter(([_, p]) => p.available)
+                                                // .filter(([_, p]) => p.available) // Show all, even offline
                                                 .map(([key, provider]) => (
                                                     <div
                                                         key={key}
-                                                        className={styles.providerOption}
+                                                        className={`${styles.providerOption} ${!provider.available ? styles.providerUnavailable : ''}`}
                                                         onClick={() => setSelectedService(key)}
                                                     >
                                                         <div className={styles.providerIcon}>
@@ -1222,9 +1233,14 @@ export default function CodecPage() {
                                                                 {provider.name}
                                                             </div>
                                                             <div className={styles.providerMeta}>
-                                                                {provider.models.length} models available
+                                                                {provider.available
+                                                                    ? `${provider.models.length} models available`
+                                                                    : 'Offline / Detected manually'
+                                                                }
                                                             </div>
                                                         </div>
+
+
                                                         <div className={styles.arrow}>→</div>
                                                     </div>
                                                 ))
@@ -1264,7 +1280,7 @@ export default function CodecPage() {
                                             </div>
                                         </div>
                                         <div className={styles.providerList} style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                            {modelsData && modelsData.providers[selectedService as keyof typeof modelsData.providers] ? (
+                                            {modelsData && modelsData.providers[selectedService as keyof typeof modelsData.providers] && modelsData.providers[selectedService as keyof typeof modelsData.providers].models.length > 0 ? (
                                                 modelsData.providers[selectedService as keyof typeof modelsData.providers].models.map((model) => {
                                                     const llm = modelToProvider(model);
                                                     return (
@@ -1291,28 +1307,29 @@ export default function CodecPage() {
                                                     );
                                                 })
                                             ) : (
-                                                availableProviders.filter(p => p.type === selectedService).map((llm) => (
-                                                    <div
-                                                        key={llm.id}
-                                                        className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
-                                                        onClick={() => {
-                                                            setCurrentLLM(llm);
-                                                            setShowSelector(false);
-                                                        }}
-                                                    >
-                                                        <div className={styles.providerIcon}>
-                                                            {llm.type[0].toUpperCase()}
-                                                        </div>
-                                                        <div className={styles.providerDetails}>
-                                                            <div className={styles.providerName}>
-                                                                {llm.name}
+                                                (availableProviders.some(p => p.type === selectedService) ? availableProviders : FALLBACK_PROVIDERS)
+                                                    .filter(p => p.type === selectedService).map((llm) => (
+                                                        <div
+                                                            key={llm.id}
+                                                            className={`${styles.providerOption} ${currentLLM.id === llm.id ? styles.selected : ""}`}
+                                                            onClick={() => {
+                                                                setCurrentLLM(llm);
+                                                                setShowSelector(false);
+                                                            }}
+                                                        >
+                                                            <div className={styles.providerIcon}>
+                                                                {llm.type[0].toUpperCase()}
                                                             </div>
-                                                            <div className={styles.providerMeta}>
-                                                                {llm.model}
+                                                            <div className={styles.providerDetails}>
+                                                                <div className={styles.providerName}>
+                                                                    {llm.name}
+                                                                </div>
+                                                                <div className={styles.providerMeta}>
+                                                                    {llm.model}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))
+                                                    ))
                                             )}
                                         </div>
                                     </>
