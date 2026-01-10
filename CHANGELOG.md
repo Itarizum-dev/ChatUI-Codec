@@ -1,5 +1,16 @@
 # CODEC Version History
 
+## v1.6.2 - Quality of Life Improvements (2026-01-10)
+- **Feature**: `/skill` コマンドの実装
+  - チャット欄に `/skill` と入力すると、利用可能なスキルファイル一覧を表（Table）形式で表示
+- **UI**: ツールチップとボタン視認性の向上
+  - Mobile Menu, Memory Editor等の主要ボタンにツールチップを追加
+  - MCP設定ボタンのスタイルを調整し、ヘッダーの統一感を向上
+- **Docker**: 接続安定性の向上
+  - ベースイメージを`node:20-slim`に変更し、IPv4優先解決でMac/Docker環境のDNS問題を修正
+  - ローカル(`localhost`)とDocker(`host.docker.internal`)でOllama接続先を自動判別
+- **Debug**: Ollama接続失敗時に詳細なエラー原因をログ出力
+
 ## v1.6.1 - UI Fixes & Resilient LLM Selection (2026-01-10)
 - **Fix**: オフライン判定時のLLM選択ロジックを改善
   - バックエンドがモデル一覧を返さない場合（オフライン等）でも、強制的にOllamaを選択可能にするフォールバックロジックを実装
@@ -9,27 +20,6 @@
   - ボタンのレスポンシブ配置（折り返し対応）を改善
   - LLM CONFIGボタン押下時に確実にモデル一覧を再取得 (`refreshModels()`) するよう修正
 - **Backend**: Ollamaモデル取得時のタイムアウトを5秒から30秒に延長し、Docker環境での接続安定性を向上
-
-## v1.6.2 - Robust Ollama & Config Unification (2026-01-10)
-- **Fix**: Docker環境(Mac/Node20)でのDNS解決エラー(ENOTFOUND)を修正するため、ベースイメージを`node:20-slim`に変更
-- **BackEnd**: Node.jsのDNS解決順序をIPv4優先(`ipv4first`)に固定し、Ollama接続の安定性を向上
-- **Config**: ローカル(`localhost`)とDocker(`host.docker.internal`)でOllama接続先を自動判別できるように環境変数管理を統一
-- **Debug**: Ollama接続失敗時に詳細なエラー原因(`cause`)をログ出力するように改善
-
-## v1.6.3 - UX Improvements: Skills & Tooltips (2026-01-10)
-- **Feature**: `/skill` コマンドの実装
-  - チャット欄に `/skill` と入力すると、利用可能なスキルファイル一覧を表示
-- **UI**: ヘッダー以外の主要ボタンにもツールチップを追加
-  - Mobile Menuボタン, Memory Editorボタンに説明を表示し、初見ユーザーの利便性を向上
-- **UI**: MCP設定ボタンのスタイルを調整（他のボタンと輝度を統一）
-
-## v1.6.4 - Bugfix: Skill List Display (2026-01-10)
-- **Fix**: `/skill` コマンド実行時にスキル名ではなく `[object Object]` と表示される不具合を修正
-  - バックエンドからのレスポンス形式に合わせて、正しく `name` と `description` を表示するように変更
-
-## v1.6.5 - UI Polish: Skill Table (2026-01-10)
-- **Improvement**: `/skill` コマンドの出力形式をリストからテーブルに変更
-  - Name, Description, Path を整列して表示し、可読性を向上
 
 
 
