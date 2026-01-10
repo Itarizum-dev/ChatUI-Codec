@@ -16,6 +16,14 @@
 - **Config**: ローカル(`localhost`)とDocker(`host.docker.internal`)でOllama接続先を自動判別できるように環境変数管理を統一
 - **Debug**: Ollama接続失敗時に詳細なエラー原因(`cause`)をログ出力するように改善
 
+## v1.6.3 - UX Improvements: Skills & Tooltips (2026-01-10)
+- **Feature**: `/skill` コマンドの実装
+  - チャット欄に `/skill` と入力すると、利用可能なスキルファイル一覧を表示
+- **UI**: ヘッダー以外の主要ボタンにもツールチップを追加
+  - Mobile Menuボタン, Memory Editorボタンに説明を表示し、初見ユーザーの利便性を向上
+- **UI**: MCP設定ボタンのスタイルを調整（他のボタンと輝度を統一）
+
+
 ## v1.6.0 - Persona Editor & UI Polish (2026-01-10)
 - **Feature**: ペルソナエディタ機能の実装
   - コンタクトリストに追加された `[ MEMORY EDITOR ]` ボタンから起動

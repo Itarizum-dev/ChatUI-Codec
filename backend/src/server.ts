@@ -65,6 +65,20 @@ app.get('/api/debug/log', (req, res) => {
 });
 
 // ============================================
+// Skills API Endpoints
+// ============================================
+
+/** スキル一覧取得 */
+app.get('/api/skills', async (req, res) => {
+    try {
+        const skills = await skillManager.getAvailableSkills();
+        res.json({ skills });
+    } catch (e) {
+        res.status(500).json({ error: (e as Error).message });
+    }
+});
+
+// ============================================
 // MCP API Endpoints
 // ============================================
 

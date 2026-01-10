@@ -342,7 +342,7 @@ export default function CodecPage() {
 
         // Command: Help
         if (input.trim() === '/help') {
-            const helpContent = "**Available Commands**\n\n- `/help`: Show this help message\n- `/clear`: Clear conversation history";
+            const helpContent = "**Available Commands**\n\n- `/help`: Show this help message\n- `/skill`: List available skills\n- `/clear`: Clear conversation history";
 
             const helpMessage: Message = {
                 id: crypto.randomUUID(),
@@ -353,6 +353,43 @@ export default function CodecPage() {
             setMessages((prev) => [...prev, helpMessage]);
             setInput("");
             playTypeSound();
+            return;
+        }
+
+        // Command: Skill List
+        if (input.trim() === '/skill') {
+            setIsLoading(true);
+            setInput("");
+            playTypeSound();
+
+            try {
+                const res = await fetch(`${getBackendUrl()}/api/skills`);
+                if (!res.ok) throw new Error("Failed to fetch skills");
+                const data = await res.json();
+                const skills = data.skills as string[];
+
+                const content = "**Available Skills**\n\n" + (skills.length > 0
+                    ? skills.map(s => `- ${s}`).join('\n')
+                    : "No skills found.");
+
+                const sysMessage: Message = {
+                    id: crypto.randomUUID(),
+                    role: 'system',
+                    content: content,
+                    timestamp: new Date(),
+                };
+                setMessages((prev) => [...prev, sysMessage]);
+            } catch (e) {
+                const errMsg: Message = {
+                    id: crypto.randomUUID(),
+                    role: 'system',
+                    content: `Error fetching skills: ${(e as Error).message}`,
+                    timestamp: new Date(),
+                };
+                setMessages((prev) => [...prev, errMsg]);
+            } finally {
+                setIsLoading(false);
+            }
             return;
         }
 
@@ -586,12 +623,19 @@ export default function CodecPage() {
                 <header className={styles.codecHeader}>
                     <div className={styles.headerLeft}>
                         {/* Mobile Menu Button */}
-                        <button
-                            className={styles.mobileMenuBtn}
-                            onClick={() => setShowMobileMenu(true)}
-                        >
-                            Menu
-                        </button>
+                        {/* Mobile Menu Button - Wrapped in Tooltip */}
+                        <div className={styles.tooltipContainer}>
+                            <button
+                                className={styles.mobileMenuBtn}
+                                onClick={() => setShowMobileMenu(true)}
+                                title=""
+                            >
+                                Menu
+                            </button>
+                            <span className={`${styles.tooltipText} ${styles.tooltipResponse}`}>
+                                モバイル用メニューを開きます
+                            </span>
+                        </div>
                         <span className={styles.codecMainTitle}>CODEC</span>
                     </div>
                     <div className={styles.frequencyContainer}>
@@ -1139,20 +1183,25 @@ export default function CodecPage() {
                                         </div>
                                     </div>
                                 ))}
-                                {/* Memory Editor Button - Integrated into list */}
-                                <div
-                                    className={styles.contactItem}
-                                    style={{
-                                        border: '1px dashed var(--codec-green-dim)',
-                                        opacity: 0.7,
-                                        justifyContent: 'center',
-                                        marginTop: '8px',
-                                        cursor: 'pointer'
-                                    }}
-                                    onClick={() => setShowPersonaEditor(true)}
-                                >
-                                    <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
-                                        [ MEMORY EDITOR ]
+                                {/* Memory Editor Button - Integrated into list with Tooltip */}
+                                <div className={styles.tooltipContainer} style={{ width: '100%', marginTop: '8px' }}>
+                                    <div
+                                        className={styles.contactItem}
+                                        style={{
+                                            border: '1px dashed var(--codec-green-dim)',
+                                            opacity: 0.7,
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            width: '100%'
+                                        }}
+                                        onClick={() => setShowPersonaEditor(true)}
+                                    >
+                                        <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
+                                            [ MEMORY EDITOR ]
+                                        </span>
+                                    </div>
+                                    <span className={`${styles.tooltipText} ${styles.tooltipTop}`}>
+                                        カスタムペルソナの作成・編集を行います
                                     </span>
                                 </div>
                             </>

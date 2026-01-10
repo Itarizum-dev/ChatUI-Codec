@@ -1055,7 +1055,7 @@
 .mcpSettingsBtn {
     background: transparent;
     border: 1px solid var(--codec-green-dark);
-    color: var(--codec-green-dim);
+    color: var(--codec-green-mid);
     /* Match frequencyButton style */
     font-family: var(--font-mono);
     font-size: 0.7rem;
@@ -1067,6 +1067,12 @@
     cursor: pointer;
     transition: all 0.2s;
     /* margin-right handled by group */
+}
+
+.mcpSettingsBtn:hover {
+    border-color: var(--codec-green-mid);
+    color: var(--codec-green-bright);
+    background: rgba(0, 255, 65, 0.05);
 }
 
 /* Match frequencyButton style for LLM Config */
