@@ -128,16 +128,35 @@ npm run dev
    ```
 3. 表示された `https://...` のURLにアクセスします。
 
-## 🎨 ペルソナのカスタマイズ
-デフォルトのキャラクター以外に、オリジナルのペルソナを設定ファイルで管理できます。
+## 🎨 ペルソナのカスタマイズ (Advanced)
 
-1. `frontend/public/data/personas.sample.json` を `personas.json` にコピーします。
-   ```bash
-   cp frontend/public/data/personas.sample.json frontend/public/data/personas.json
-   ```
-2. `personas.json` を編集して、好みのキャラクター設定（名前、周波数、システムプロンプト、画像パス）を記述します。
-   - `personas.json` は `.gitignore` に含まれているため、プライベートな設定（APIキーを含むプロンプトや個人情報など）を記述してもリポジトリには公開されません。
-   - ファイルが存在しない場合は、ビルトインの `SYSTEM` ペルソナのみが表示されます。
+デフォルトのキャラクターに加えて、自分だけのオリジナルペルソナや、自分自身（ME）のプロフィールを設定ファイルで管理できます。
+これらはGit管理外（`.gitignore`）となるため、プライベートな情報を安全に記述できます。
+
+### 1. 設定ファイルの作成
+サンプルの設定ファイルをコピーして、`personas.json` を作成します。
+ファイルが存在しない場合は、最低限の `SYSTEM` ペルソナのみが表示されます。
+
+```bash
+cp frontend/public/data/personas.sample.json frontend/public/data/personas.json
+```
+
+### 2. キャラクターの編集
+`personas.json` を開き、JSON形式で自由に編集・追加してください。
+
+- **カスタムペルソナ**: 好きなキャラクターを追加できます。
+- **自分 (ME) の設定**: `id: "user-me"` (`isUser: true`) の項目を編集すると、自分の名前やアイコンを変更できます。
+
+### 3. カスタム画像の追加
+オリジナルの顔アイコンを使いたい場合は、画像ファイルを以下のフォルダに置いてください。
+
+`frontend/public/data/images/`
+
+JSONからは以下のように参照します：
+```json
+"portraitUrl": "/data/images/my-face.png"
+```
+※このフォルダ内の画像もGitにはコミットされません。
 
 ## ライセンス
 MIT License
