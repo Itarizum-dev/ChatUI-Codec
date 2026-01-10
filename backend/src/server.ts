@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import dns from 'dns';
 import { ChatRequest, ChatResponse, MessageMetadata } from './types';
 import { DEFAULT_PROVIDERS, PERSONAS } from './config';
 import { McpManager } from './mcp/McpManager'; // Changed import for McpManager class
@@ -10,6 +11,12 @@ import { SkillManager } from './skills/skillManager'; // Added SkillManager impo
 import { SkillCreator } from './skills/skillCreator'; // Added SkillCreator import
 import { McpServerConfig, McpTool } from './mcp/types';
 import { BUILTIN_TOOLS, findBuiltinTool, BuiltinTool, registerSkillCreator } from './tools/builtinTools';
+
+
+// Set IPv4 first for DNS resolution (fixes host.docker.internal issues on some Node versions)
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
 
 dotenv.config();
 
@@ -30,7 +37,7 @@ const skillCreator = new SkillCreator(skillManager);
 registerSkillCreator(skillCreator);
 
 // Debug Logger
-const DEBUG_LOG_PATH = path.join(__dirname, '../backend-debug.log');
+const DEBUG_LOG_PATH = path.join(__dirname, '../data/backend-debug.log');
 const logToDebugFile = (tag: string, data: any) => {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] [${tag}] ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}\n`;
@@ -40,6 +47,21 @@ const logToDebugFile = (tag: string, data: any) => {
 
 app.get('/', (req, res) => {
     res.json({ status: 'ok', service: 'Codec Backend', version: '0.6.1' });
+});
+
+/** デバッグログ閲覧API (直近N行) */
+app.get('/api/debug/log', (req, res) => {
+    try {
+        if (!fs.existsSync(DEBUG_LOG_PATH)) {
+            return res.json({ log: 'No log file found.' });
+        }
+        const logContent = fs.readFileSync(DEBUG_LOG_PATH, 'utf-8');
+        // 直近100行を返す
+        const lines = logContent.split('\n').slice(-100).join('\n');
+        res.json({ log: lines });
+    } catch (e) {
+        res.status(500).json({ error: (e as Error).message });
+    }
 });
 
 // ============================================
@@ -109,7 +131,9 @@ async function fetchOllamaModels(): Promise<ModelInfo[]> {
             signal: AbortSignal.timeout(30000), // Extended timeout to 30s
         });
         if (!response.ok) {
+            const errorInfo = { status: response.status, text: response.statusText };
             console.log(`[Models] Ollama API error: ${response.status} ${response.statusText}`);
+            logToDebugFile('OLLAMA_API_ERROR', errorInfo);
             return [];
         }
 
@@ -124,7 +148,11 @@ async function fetchOllamaModels(): Promise<ModelInfo[]> {
         console.log(`[Models] Fetched ${models.length} Ollama models`);
         return models;
     } catch (error) {
-        console.warn(`[Models] Ollama connection failed (http://${ollamaHost}):`, (error as Error).message);
+        const err = error as Error & { cause?: unknown };
+        const errorMsg = err.message;
+        const errorCause = err.cause ? JSON.stringify(err.cause) : 'no-cause';
+        console.warn(`[Models] Ollama connection failed (http://${ollamaHost}):`, errorMsg, errorCause);
+        logToDebugFile('OLLAMA_CONN_ERROR', { host: ollamaHost, error: errorMsg, cause: err.cause });
         return [];
     }
 }

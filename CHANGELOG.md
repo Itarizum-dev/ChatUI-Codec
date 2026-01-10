@@ -10,6 +10,12 @@
   - LLM CONFIGボタン押下時に確実にモデル一覧を再取得 (`refreshModels()`) するよう修正
 - **Backend**: Ollamaモデル取得時のタイムアウトを5秒から30秒に延長し、Docker環境での接続安定性を向上
 
+## v1.6.2 - Robust Ollama & Config Unification (2026-01-10)
+- **Fix**: Docker環境(Mac/Node20)でのDNS解決エラー(ENOTFOUND)を修正するため、ベースイメージを`node:20-slim`に変更
+- **BackEnd**: Node.jsのDNS解決順序をIPv4優先(`ipv4first`)に固定し、Ollama接続の安定性を向上
+- **Config**: ローカル(`localhost`)とDocker(`host.docker.internal`)でOllama接続先を自動判別できるように環境変数管理を統一
+- **Debug**: Ollama接続失敗時に詳細なエラー原因(`cause`)をログ出力するように改善
+
 ## v1.6.0 - Persona Editor & UI Polish (2026-01-10)
 - **Feature**: ペルソナエディタ機能の実装
   - コンタクトリストに追加された `[ MEMORY EDITOR ]` ボタンから起動
