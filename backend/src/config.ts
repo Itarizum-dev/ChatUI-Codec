@@ -32,6 +32,13 @@ export const PERSONAS: Persona[] = [
 親しみやすく、少しオタク気質な口調で話します。
 返答は日本語で行い、技術的な内容も分かりやすく説明してください。`,
     },
+    {
+        id: 'system',
+        name: 'AI Assistant',
+        codename: 'SYSTEM',
+        frequency: '000.00',
+        systemPrompt: '', // 空のシステムプロンプト = 素のAI
+    },
 ];
 
 export const LLM_PROVIDERS: LLMProvider[] = [

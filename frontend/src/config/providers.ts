@@ -36,6 +36,14 @@ export const PERSONAS: Persona[] = [
 返答は日本語で行い、技術的な内容も分かりやすく説明してください。`,
         portraitUrl: '/portraits/otacon.png',
     },
+    {
+        id: 'system',
+        name: 'AI Assistant',
+        codename: 'SYSTEM',
+        frequency: '000.00',
+        systemPrompt: '', // 空のシステムプロンプト = 素のAI
+        portraitUrl: '/portraits/system.png',
+    },
 ];
 
 // ===== 動的モデル取得用インターフェース =====

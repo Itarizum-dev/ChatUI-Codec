@@ -1,5 +1,15 @@
 # CODEC Version History
 
+## v1.5.0 - Skills & Tools Enhancement (2026-01-10)
+- **Feature**: Anthropics公式スキル15個をインポート
+  - algorithmic-art, brand-guidelines, canvas-design, doc-coauthoring, docx, frontend-design, internal-comms, mcp-builder, pdf, pptx, slack-gif-creator, theme-factory, web-artifacts-builder, webapp-testing, xlsx
+- **Feature**: SYSTEMペルソナを追加
+  - キャラクター設定なしの素のAIアシスタント
+  - 周波数 000.00、専用ポートレート付き
+- **Feature**: ファイルシステムビルトインツールを拡充（計8個）
+  - `cat` (読み込み), `write` (書き込み), `append` (追記), `ls` (一覧)
+  - `mkdir` (ディレクトリ作成), `stat` (情報取得), `exists` (存在確認), `cp` (コピー)
+
 ## v1.4.1 - Progressive Disclosure Cleanup (2026-01-10)
 - **Refactor**: deprecated関数を削除し、Progressive Disclosure APIに完全移行
   - `fullSkillsCache` (未使用キャッシュ) を削除
