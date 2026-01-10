@@ -1,39 +1,41 @@
-# CODEC Chat UI - Metal Gear Style AI Interface
+# CODEC Chat UI - Retro Sci-Fi AI Interface
 
-Metal Gear Solid 2の無線画面（CODEC）を再現した、AIチャットインターフェースです。
-ローカルLLM (Ollama) や、Gemini, Claude, OpenAI などの主要なAIモデルと会話ができます。
+レトロフューチャーな無線機（CODEC）をモチーフにした、没入型AIチャットインターフェースです。
+ローカルLLM (Ollama) や、Gemini, Claude, OpenAI などの主要なAIモデルと会話ができ、**MCP (Model Context Protocol)** や **Agent Skills** といった高度なエージェント機能をサポートしています。
 
 ![Codec UI Screenshot](/frontend/public/og-image.png?raw=true)
 
 ## 特徴
-- 📟 **Authentic Design**: MGS2の無線画面を忠実に再現したレトロで没入感のあるUI。
-- 🏠 **Local First**: Ollamaをサポートし、ローカル環境でプライバシーを守りながらAIと会話可能。
-- 🔗 **Multi-Provider**: Google Gemini, Anthropic Claude, OpenAI にも対応。
-- 🛠 **MCP Support**: Model Context Protocol (MCP) をサポートし、外部ツールとの連携が可能。
-- 🌍 **External Access**: ngrokを使用して、安全に外部からアクセス可能。
+- 🤖 **Multi-LLM Support**: Google Gemini, Anthropic Claude, OpenAI, そしてローカルの Ollama に完全対応。
+- 🛠 **MCP (Model Context Protocol)**: Claude Desktop互換のMCPをサポート。Web検索、ファイル操作、GitHub連携など、AIの機能を無限に拡張可能。
+- ⚡️ **Agent Skills**: `SKILL.md` (Markdown) で手順を定義するだけで、AIに複雑なタスクを自律的に実行させることが可能。
+- 📟 **Retro Aesthetics**: 走査線、モノクロームグリーン、ドット絵による、没入感のあるレトロなUI体験。
+- 🏠 **Local First**: Ollama + Docker で、プライバシーを守りながらローカル環境で動作。
 
 ## 機能ガイド
 
-### 👥 キャラクター (Frequency)
-右側のパネルには、通信相手（周波数）が表示されています。クリックすることでAIのペルソナ（人格）を切り替えることができます。
-- **140.85 (SNAKE)**: 伝説の傭兵。冷静沈着で軍事的な口調。
-- **141.12 (COLONEL)**: キャンベル大佐。作戦指揮官としてアドバイスを提供。
-- **141.80 (OTACON)**: ハル・エメリッヒ。技術・アニメ・科学オタク。フレンドリーな口調。
-
 ### ⚙️ MCP (Model Context Protocol)
 **「MCP ON/OFF」** ボタンで切り替えます。
-有効にすると、AIは外部ツール（Web検索、システム操作、ファイル読み書きなど）を使用できるようになります。
-- 画面右下の設定ボタンから、接続するMCPサーバーを管理できます。
-- 使用するには、対応したモデル（Claude 3.5 Sonnet推奨）が必要です。
-
-### 🧠 Thinking Mode (思考モード)
-**「🧠 ON/OFF」** ボタンで切り替えます (Ollama専用)。
-ローカルLLM (gpt-oss等) のChain of Thought（思考プロセス）を視覚化します。AIがどのように答えを導き出したのか、その思考の過程をログとして表示します。
-※ LLMが `<think>` タグを出力する場合のみ有効です。
+標準化されたプロトコル「MCP」を通じて、AIが外部ツールを安全に使用できます。
+- 画面右下の設定ボタンから、接続するMCPサーバーを管理可能。
+- ファイルシステム操作、ブラウザ制御、データベース接続など、エージェント的な振る舞いを実現します。
 
 ### ⚡️ Skills (スキルシステム)
-AIに特定のタスクを教え込むことができます。
-`/skills` ディレクトリにある `SKILL.md` に手順を記述することで、AIはその手順書を読み込み、複雑なタスクを自律的に実行できるようになります。
+AIに特定のタスク手順を教える「スキル」機能です。
+`/skills` ディレクトリにMarkdownファイル (`SKILL.md`) を置くだけで、AIはその手順を理解し、実行できるようになります。
+- 例: 文書作成、コードレビュー、データ分析などの定型業務を自動化。
+- チャット欄で `/skill` と入力すると、利用可能なスキル一覧を確認できます。
+
+### 👥 ペルソナ切替 (Frequency)
+右側のパネルには、周波数（Frequency）ごとの通信チャンネルが表示されています。
+クリックすることで、AIの口調や役割（ペルソナ）を瞬時に切り替えることができます。
+- **140.85 (Tactical)**: 冷静沈着な現場のプロフェッショナル。
+- **141.12 (Command)**: 的確な指示を与える指揮官タイプ。
+- **141.80 (Science)**: 技術的な解説を得意とするエンジニアタイプ。
+
+### 🧠 Thinking Mode (思考モード)
+**「🧠 ON/OFF」** ボタンで切り替えます (対応モデル専用)。
+DeepSeek-R1 や Qwen などの Chain of Thought（思考プロセス）に対応しており、AIが回答に至るまでの「思考のログ」を視覚化します。
 
 ## 必要条件
 - **Docker Desktop**: 推奨（ワンコマンドで起動可能）
@@ -86,6 +88,7 @@ BackendとFrontendそれぞれに設定ファイル (`.env`) を用意します�
 **Backend (APIキーなど)**
 ```bash
 cd backend
+npm install
 cp .env.example .env
 # .envファイルを編集して、必要なAPIキー (Google, Anthropic等) を入力してください
 ```
@@ -93,6 +96,7 @@ cp .env.example .env
 **Frontend (UI設定)**
 ```bash
 cd ../frontend
+npm install
 cp .env.example .env
 # 基本的にそのままでOKです
 ```
@@ -103,14 +107,12 @@ BackendとFrontendを別々のターミナルで起動します。
 **Terminal 1 (Backend)**
 ```bash
 cd backend
-npm install
 npm run dev
 ```
 
 **Terminal 2 (Frontend)**
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
 
