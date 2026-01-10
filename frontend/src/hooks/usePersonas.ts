@@ -32,9 +32,29 @@ export function usePersonas(): UsePersonasReturn {
         try {
             // Load custom personas
             const savedCustom = localStorage.getItem(STORAGE_KEY);
-            if (savedCustom) {
-                setCustomPersonas(JSON.parse(savedCustom));
+            let parsedCustom: Persona[] = savedCustom ? JSON.parse(savedCustom) : [];
+
+            // Add default user persona if not exists
+            const hasUser = parsedCustom.some(p => p.isUser);
+            if (!hasUser) {
+                const defaultUser: Persona = {
+                    id: 'user-me',
+                    name: 'ME',
+                    codename: 'AGENT',
+                    frequency: '140.00', // Dummy
+                    systemPrompt: '',
+                    isBuiltIn: false,
+                    isUser: true,
+                    portraitUrl: '/portraits/agent.png'
+                };
+                parsedCustom = [...parsedCustom, defaultUser];
+                setCustomPersonas(parsedCustom);
+                // Save immediately to ensure it exists
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedCustom));
+            } else {
+                setCustomPersonas(parsedCustom);
             }
+
             // Load modified builtin prompts
             const savedPrompts = localStorage.getItem(BUILTIN_PROMPTS_KEY);
             if (savedPrompts) {

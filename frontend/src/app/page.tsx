@@ -65,6 +65,7 @@ export default function CodecPage() {
     // Personas State (Custom Hook)
     const { personas, addPersona, updatePersona, deletePersona, resetBuiltinPrompt } = usePersonas();
     const [showPersonaEditor, setShowPersonaEditor] = useState(false);
+    const [editingPersonaId, setEditingPersonaId] = useState<string | undefined>(undefined);
 
     // Mobile Menu State
     const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -700,16 +701,29 @@ export default function CodecPage() {
 
                 {/* Left Panel - Conversation List & System Data */}
                 <aside className={styles.codecPortraitPanel}>
-                    {/* ME Portrait */}
-                    <div className={styles.portraitFrame} style={{ height: '90px', width: '90px', marginBottom: '5px' }}>
-                        <img
-                            src="/portraits/agent.png"
-                            alt="Me"
-                            className={styles.portraitImageRaw}
-                        />
+                    {/* ME Portrait - Click to Edit */}
+                    <div className={styles.tooltipContainer}>
+                        <div
+                            className={styles.portraitFrame}
+                            style={{ height: '90px', width: '90px', marginBottom: '5px', cursor: 'pointer' }}
+                            onClick={() => {
+                                const userPersona = personas.find(p => p.isUser);
+                                if (userPersona) {
+                                    setEditingPersonaId(userPersona.id);
+                                    setShowPersonaEditor(true);
+                                }
+                            }}
+                        >
+                            <img
+                                src={personas.find(p => p.isUser)?.portraitData || personas.find(p => p.isUser)?.portraitUrl || "/portraits/agent.png"}
+                                alt="Me"
+                                className={styles.portraitImageRaw}
+                            />
+                        </div>
+                        <span className={styles.tooltipText}>Edit Profile</span>
                     </div>
-                    <div className={styles.portraitName}>ME - LOGS</div>
-                    <div className={styles.portraitStatus}>AGENT</div>
+                    <div className={styles.portraitName}>{personas.find(p => p.isUser)?.name || "ME"} - LOGS</div>
+                    <div className={styles.portraitStatus}>{personas.find(p => p.isUser)?.codename || "AGENT"}</div>
 
                     {/* Conversation List Container - Flexible Height */}
                     <div className={styles.conversationListContainer} style={{ flex: '1 1 auto', minHeight: '100px', marginBottom: '10px' }}>
@@ -869,7 +883,7 @@ export default function CodecPage() {
                                 <div className={styles.mobileSection}>
                                     <div className={styles.mobileSectionTitle}>CONTACTS</div>
                                     <div className={styles.mobileContactList}>
-                                        {activeTab === 'contacts' && personas.map((persona) => (
+                                        {activeTab === 'contacts' && personas.filter(p => !p.isUser).map((persona) => (
                                             <div
                                                 key={persona.id}
                                                 className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
@@ -977,12 +991,15 @@ export default function CodecPage() {
                                     const persona = !isUser && !isSystem
                                         ? (personas.find(p => p.id === msg.personaId) || currentPersona)
                                         : null;
-                                    // 暫定対応: ユーザーの自分の肖像画 (後で設定可能にする)
-                                    const USER_PORTRAIT = "/portraits/agent.png";
+
+                                    const userPersona = personas.find(p => p.isUser);
+                                    const userPortrait = userPersona?.portraitData || userPersona?.portraitUrl || "/portraits/agent.png";
+                                    const userCodename = userPersona?.codename || "ME";
+
                                     const iconSrc = isUser
-                                        ? USER_PORTRAIT
+                                        ? userPortrait
                                         : (persona?.portraitData || persona?.portraitUrl || null);
-                                    const iconAlt = isUser ? "ME" : isSystem ? "SYS" : (persona?.codename || "Unknown");
+                                    const iconAlt = isUser ? userCodename : isSystem ? "SYS" : (persona?.codename || "Unknown");
 
                                     // Toggle thinking panel collapse
                                     const toggleThinkingCollapse = () => {
@@ -1160,7 +1177,7 @@ export default function CodecPage() {
                     <div className={styles.panelContent}>
                         {activeTab === 'contacts' ? (
                             <>
-                                {personas.map((persona) => (
+                                {personas.filter(p => !p.isUser).map((persona) => (
                                     <div
                                         key={persona.id}
                                         className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
@@ -1410,12 +1427,16 @@ export default function CodecPage() {
             {/* Persona Editor Modal */}
             <PersonaEditorModal
                 isOpen={showPersonaEditor}
-                onClose={() => setShowPersonaEditor(false)}
+                onClose={() => {
+                    setShowPersonaEditor(false);
+                    setEditingPersonaId(undefined);
+                }}
                 personas={personas}
                 onAdd={addPersona}
                 onUpdate={updatePersona}
                 onDelete={deletePersona}
                 onResetBuiltinPrompt={resetBuiltinPrompt}
+                initialEditingId={editingPersonaId}
             />
 
             {/* Skill Detail Modal */}

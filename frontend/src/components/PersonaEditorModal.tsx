@@ -17,6 +17,7 @@ interface PersonaEditorModalProps {
     onUpdate: (id: string, updates: Partial<Persona>) => void;
     onDelete: (id: string) => boolean;
     onResetBuiltinPrompt: (id: string) => void;
+    initialEditingId?: string;
 }
 
 export default function PersonaEditorModal({
@@ -27,11 +28,22 @@ export default function PersonaEditorModal({
     onUpdate,
     onDelete,
     onResetBuiltinPrompt,
+    initialEditingId,
 }: PersonaEditorModalProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [dragActive, setDragActive] = useState(false);
+
+    // Initial edit mode from prop
+    useEffect(() => {
+        if (isOpen && initialEditingId) {
+            const parsed = personas.find(p => p.id === initialEditingId);
+            if (parsed) {
+                startEditing(parsed);
+            }
+        }
+    }, [isOpen, initialEditingId, personas]);
 
     // Add form state
     const [newName, setNewName] = useState('');
@@ -124,6 +136,13 @@ export default function PersonaEditorModal({
         if (persona.isBuiltIn) {
             // Only update system prompt for builtins
             onUpdate(persona.id, { systemPrompt: editSystemPrompt });
+        } else if (persona.isUser) {
+            // Update profile fields for user
+            onUpdate(persona.id, {
+                name: editName.trim() || editCodename.trim(),
+                codename: editCodename.trim().toUpperCase(),
+                portraitData: editPortraitData || undefined,
+            });
         } else {
             // Update all fields for custom personas
             onUpdate(persona.id, {
@@ -138,8 +157,8 @@ export default function PersonaEditorModal({
     };
 
     const handleDelete = (persona: Persona) => {
-        // Built-in 'system' cannot be deleted
-        if (persona.isBuiltIn && persona.id === 'system') return;
+        // Built-in 'system' and user 'me' cannot be deleted
+        if (persona.id === 'system' || persona.isUser) return;
 
         const confirmMsg = persona.isBuiltIn
             ? `Delete default character "${persona.codename}"? You can restore it by clearing browser data.`
@@ -201,9 +220,10 @@ export default function PersonaEditorModal({
                                             )}
                                         </div>
 
+                                        {/* Editable Fields */}
                                         {(!persona.isBuiltIn || persona.id !== 'system') && (
                                             <>
-                                                {/* Portrait Upload for custom or non-system builtins */}
+                                                {/* Portrait Upload for custom, user, or non-system builtins */}
                                                 <div className={styles.imageSection}>
                                                     <div
                                                         className={`${styles.dropzone} ${dragActive ? styles.dragActive : ''}`}
@@ -253,23 +273,28 @@ export default function PersonaEditorModal({
                                                     onChange={e => setEditCodename(e.target.value)}
                                                     className={styles.input}
                                                 />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Frequency (e.g. 142.00)"
-                                                    value={editFrequency}
-                                                    onChange={e => setEditFrequency(e.target.value)}
-                                                    className={styles.input}
-                                                />
+
+                                                {!persona.isUser && (
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Frequency (e.g. 142.00)"
+                                                        value={editFrequency}
+                                                        onChange={e => setEditFrequency(e.target.value)}
+                                                        className={styles.input}
+                                                    />
+                                                )}
                                             </>
                                         )}
 
-                                        <textarea
-                                            placeholder="System Prompt"
-                                            value={editSystemPrompt}
-                                            onChange={e => setEditSystemPrompt(e.target.value)}
-                                            className={styles.textarea}
-                                            rows={4}
-                                        />
+                                        {!persona.isUser && (
+                                            <textarea
+                                                placeholder="System Prompt"
+                                                value={editSystemPrompt}
+                                                onChange={e => setEditSystemPrompt(e.target.value)}
+                                                className={styles.textarea}
+                                                rows={4}
+                                            />
+                                        )}
 
                                         <div className={styles.editActions}>
                                             <button
@@ -329,7 +354,7 @@ export default function PersonaEditorModal({
                                             >
                                                 EDIT
                                             </button>
-                                            {(!persona.isBuiltIn || persona.id !== 'system') && (
+                                            {(!persona.isBuiltIn || persona.id !== 'system') && !persona.isUser && (
                                                 <button
                                                     className={styles.deleteBtn}
                                                     onClick={() => handleDelete(persona)}

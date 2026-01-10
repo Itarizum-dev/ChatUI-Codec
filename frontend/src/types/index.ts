@@ -17,6 +17,7 @@ export interface Persona {
     systemPrompt: string;
     portraitUrl?: string;
     isBuiltIn?: boolean;      // 組み込みキャラかどうか
+    isUser?: boolean;         // ユーザー自身かどうか
     portraitData?: string;    // Base64画像データ（カスタムペルソナ用）
 }
 
