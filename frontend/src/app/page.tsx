@@ -703,13 +703,13 @@ export default function CodecPage() {
                     {/* ME Portrait */}
                     <div className={styles.portraitFrame} style={{ height: '90px', width: '90px', marginBottom: '5px' }}>
                         <img
-                            src="/portraits/soldier_me.png"
+                            src="/portraits/agent.png"
                             alt="Me"
                             className={styles.portraitImageRaw}
                         />
                     </div>
                     <div className={styles.portraitName}>ME - LOGS</div>
-                    <div className={styles.portraitStatus}>SOLDIER</div>
+                    <div className={styles.portraitStatus}>AGENT</div>
 
                     {/* Conversation List Container - Flexible Height */}
                     <div className={styles.conversationListContainer} style={{ flex: '1 1 auto', minHeight: '100px', marginBottom: '10px' }}>
