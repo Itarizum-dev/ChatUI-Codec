@@ -128,5 +128,16 @@ npm run dev
    ```
 3. 表示された `https://...` のURLにアクセスします。
 
+## 🎨 ペルソナのカスタマイズ
+デフォルトのキャラクター以外に、オリジナルのペルソナを設定ファイルで管理できます。
+
+1. `frontend/public/data/personas.sample.json` を `personas.json` にコピーします。
+   ```bash
+   cp frontend/public/data/personas.sample.json frontend/public/data/personas.json
+   ```
+2. `personas.json` を編集して、好みのキャラクター設定（名前、周波数、システムプロンプト、画像パス）を記述します。
+   - `personas.json` は `.gitignore` に含まれているため、プライベートな設定（APIキーを含むプロンプトや個人情報など）を記述してもリポジトリには公開されません。
+   - ファイルが存在しない場合は、ビルトインの `SYSTEM` ペルソナのみが表示されます。
+
 ## ライセンス
 MIT License
