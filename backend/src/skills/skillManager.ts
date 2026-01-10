@@ -1,100 +1,130 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Skill } from './types';
+import { SkillSummary, ActivatedSkill } from './types';
 import { SkillParser } from './skillParser';
 
 export class SkillManager {
     private skillsDir: string;
     private parser: SkillParser;
-    private skillsCache: Map<string, Skill> = new Map();
+
+    // Stage 1: メタデータキャッシュ（起動時Discovery用）
+    private metadataCache: Map<string, SkillSummary> = new Map();
+
+    // Stage 2: アクティベート済みスキルキャッシュ（発動時）
+    private activatedCache: Map<string, ActivatedSkill> = new Map();
 
     constructor(skillsDir?: string) {
         // デフォルトは backend/skills
         this.skillsDir = skillsDir || path.resolve(__dirname, '../../skills');
         this.parser = new SkillParser();
+        console.log(`[SkillManager] Initialized with skills directory: ${this.skillsDir}`);
     }
 
     /**
-     * 初期化処理（全スキルロード）
+     * 初期化処理（メタデータのみ読み込み - Stage 1）
      */
     async initialize(): Promise<void> {
-        await this.loadAllSkills();
+        console.log('[SkillManager] ===== Initializing (Stage 1: Discovery) =====');
+        await this.discoverSkills();
+        console.log(`[SkillManager] ===== Discovery complete: ${this.metadataCache.size} skills found =====`);
     }
 
+    // ============================================
+    // Stage 1: Discovery（起動時メタデータ読み込み）
+    // ============================================
+
     /**
-     * 全てのスキルをロードする
+     * [Stage 1] 全スキルのメタデータを発見・読み込み
+     * 起動時に呼び出される軽量読み込み（~100 tokens/skill）
      */
-    async loadAllSkills(): Promise<Skill[]> {
-        this.skillsCache.clear();
+    async discoverSkills(): Promise<SkillSummary[]> {
+        this.metadataCache.clear();
+
         try {
             await fs.access(this.skillsDir);
         } catch {
-            console.warn(`Skills directory not found: ${this.skillsDir}`);
+            console.warn(`[SkillManager:Stage1] Skills directory not found: ${this.skillsDir}`);
             return [];
         }
 
         const entries = await fs.readdir(this.skillsDir, { withFileTypes: true });
-        const skills: Skill[] = [];
+        const summaries: SkillSummary[] = [];
 
         for (const entry of entries) {
             if (entry.isDirectory()) {
                 try {
-                    const skill = await this.parser.loadSkill(path.join(this.skillsDir, entry.name));
-                    this.skillsCache.set(skill.name, skill);
-                    skills.push(skill);
+                    const summary = await this.parser.loadMetadataOnly(
+                        path.join(this.skillsDir, entry.name)
+                    );
+                    this.metadataCache.set(summary.name, summary);
+                    summaries.push(summary);
                 } catch (e: any) {
-                    console.error(`Failed to load skill "${entry.name}":`, e.message);
+                    console.error(`[SkillManager:Stage1] Failed to discover skill "${entry.name}":`, e.message);
                 }
             }
         }
 
-        return skills;
+        return summaries;
     }
 
     /**
-     * 特定のスキルを取得
+     * [Stage 1] 利用可能なスキルのメタデータリストを取得
+     * キャッシュから返す（再読み込みなし）
      */
-    async getSkill(name: string): Promise<Skill | undefined> {
-        if (this.skillsCache.has(name)) {
-            return this.skillsCache.get(name);
+    async getAvailableSkills(): Promise<SkillSummary[]> {
+        // キャッシュが空なら再発見
+        if (this.metadataCache.size === 0) {
+            return await this.discoverSkills();
+        }
+        return Array.from(this.metadataCache.values());
+    }
+
+    // ============================================
+    // Stage 2: Activation（スキル発動時の本文読み込み）
+    // ============================================
+
+    /**
+     * [Stage 2] スキルをアクティベート（SKILL.md本文を読み込み）
+     * タスクがスキルにマッチした時に呼び出される
+     */
+    async activateSkill(name: string): Promise<ActivatedSkill | undefined> {
+        // 既にアクティベート済みならキャッシュから返す
+        if (this.activatedCache.has(name)) {
+            console.log(`[SkillManager:Stage2] Returning cached activated skill: ${name}`);
+            return this.activatedCache.get(name);
         }
 
-        // キャッシュにない場合はリロードを試みる
+        const skillPath = path.join(this.skillsDir, name);
         try {
-            const skillPath = path.join(this.skillsDir, name);
-            const skill = await this.parser.loadSkill(skillPath);
-            this.skillsCache.set(name, skill);
-            return skill;
+            const activated = await this.parser.loadActivatedSkill(skillPath);
+            this.activatedCache.set(name, activated);
+            return activated;
         } catch (e: any) {
-            console.error(`Failed to load skill "${name}":`, e.message);
+            console.error(`[SkillManager:Stage2] Failed to activate skill "${name}":`, e.message);
             return undefined;
         }
     }
 
-    /**
-     * 特定のスキルを取得（エラー時はスロー）
-     */
-    async loadSkillWithError(name: string): Promise<Skill> {
-        const skillPath = path.join(this.skillsDir, name);
-        try {
-            const skill = await this.parser.loadSkill(skillPath);
-            this.skillsCache.set(name, skill);
-            return skill;
-        } catch (e: any) {
-            throw new Error(`Failed to load skill "${name}": ${e.message}`);
-        }
-    }
+    // ============================================
+    // Stage 3: Resource Loading（リソース読み込み）
+    // ============================================
 
     /**
-     * 利用可能なスキルのメタデータリストを取得（Discovery用）
+     * [Stage 3] スキルのリソースを読み込む
+     * scripts/, references/, assets/ 内のファイルをオンデマンドで読み込む
      */
-    async getAvailableSkills(): Promise<Array<{ name: string; description: string; path: string }>> {
-        const skills = await this.loadAllSkills();
-        return skills.map(s => ({
-            name: s.name,
-            description: s.metadata.description,
-            path: s.path
-        }));
+    async loadSkillResource(skillName: string, resourcePath: string): Promise<string | undefined> {
+        const fullPath = path.join(this.skillsDir, skillName, resourcePath);
+        console.log(`[SkillManager:Stage3] Loading resource: ${skillName}/${resourcePath}`);
+
+        try {
+            const content = await fs.readFile(fullPath, 'utf8');
+            console.log(`[SkillManager:Stage3] ✓ Resource loaded: ${content.length} chars`);
+            return content;
+        } catch (e: any) {
+            console.error(`[SkillManager:Stage3] Failed to load resource "${resourcePath}":`, e.message);
+            return undefined;
+        }
     }
 
     /**

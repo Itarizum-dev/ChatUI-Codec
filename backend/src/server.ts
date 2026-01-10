@@ -283,9 +283,10 @@ app.get('/api/models/:provider', async (req, res) => {
 // Skills API Endpoints
 // ============================================
 
-/** 全スキル一覧取得 */
+/** [Stage 1] 全スキルメタデータ一覧取得（軽量） */
 app.get('/api/skills', async (req, res) => {
     try {
+        console.log('[API] GET /api/skills - Stage 1 Discovery');
         const skills = await skillManager.getAvailableSkills();
         res.json({ skills });
     } catch (error: any) {
@@ -293,11 +294,44 @@ app.get('/api/skills', async (req, res) => {
     }
 });
 
-/** 特定スキル詳細取得 */
+/** [Stage 2] スキルをアクティベート（SKILL.md本文読み込み） */
+app.get('/api/skills/:name/activate', async (req, res) => {
+    try {
+        const { name } = req.params;
+        console.log(`[API] GET /api/skills/${name}/activate - Stage 2 Activation`);
+        const skill = await skillManager.activateSkill(name);
+        if (!skill) {
+            return res.status(404).json({ error: 'Skill not found' });
+        }
+        res.json({ skill });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/** [Stage 3] スキルリソース読み込み */
+app.get('/api/skills/:name/resource/*', async (req, res) => {
+    try {
+        const { name } = req.params;
+        // ワイルドカード部分を抽出（/api/skills/:name/resource/ 以降のパス）
+        const resourcePath = req.path.replace(`/api/skills/${name}/resource/`, '');
+        console.log(`[API] GET /api/skills/${name}/resource/${resourcePath} - Stage 3 Resource`);
+        const content = await skillManager.loadSkillResource(name, resourcePath);
+        if (!content) {
+            return res.status(404).json({ error: 'Resource not found' });
+        }
+        res.json({ content });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/** 特定スキル詳細取得（Stage 2と同等、後方互換用） */
 app.get('/api/skills/:name', async (req, res) => {
     try {
         const { name } = req.params;
-        const skill = await skillManager.getSkill(name);
+        console.log(`[API] GET /api/skills/${name} - Activating (backward compat)`);
+        const skill = await skillManager.activateSkill(name);
         if (!skill) {
             return res.status(404).json({ error: 'Skill not found' });
         }

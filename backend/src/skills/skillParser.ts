@@ -1,13 +1,66 @@
 import fs from 'fs/promises';
 import path from 'path';
 import yaml from 'yaml';
-import { Skill, SkillMetadata, SkillParserError } from './types';
+import { Skill, SkillMetadata, SkillParserError, SkillSummary, ActivatedSkill } from './types';
 
 export class SkillParser {
     /**
-     * Skillディレクトリからスキルを読み込む
+     * [Stage 1] フロントマター（name, description）のみを抽出
+     * 起動時Discovery用の軽量読み込み（~100 tokens/skill）
+     */
+    async loadMetadataOnly(skillPath: string): Promise<SkillSummary> {
+        const skillFile = path.join(skillPath, 'SKILL.md');
+        console.log(`[Skills:Stage1] Loading metadata only from: ${path.basename(skillPath)}`);
+
+        const fileContent = await fs.readFile(skillFile, 'utf8');
+
+        // フロントマター部分のみ抽出（本文全体は読み込まない）
+        const frontmatterMatch = fileContent.match(/^---\s*[\r\n]+([\s\S]*?)[\r\n]+---/);
+        if (!frontmatterMatch) {
+            throw new Error(`Invalid SKILL.md format at ${skillPath}: Missing YAML frontmatter`);
+        }
+
+        const metadata = yaml.parse(frontmatterMatch[1]) as SkillMetadata;
+        this.validateMetadata(metadata);
+
+        console.log(`[Skills:Stage1] ✓ Discovered: ${metadata.name} (${metadata.description.slice(0, 50)}...)`);
+
+        return {
+            name: metadata.name,
+            description: metadata.description,
+            path: skillPath
+        };
+    }
+
+    /**
+     * [Stage 2] スキル発動時: SKILL.md本文を読み込む
+     * フロントマター + 本文（リソースは除く）
+     */
+    async loadActivatedSkill(skillPath: string): Promise<ActivatedSkill> {
+        const skillFile = path.join(skillPath, 'SKILL.md');
+        console.log(`[Skills:Stage2] Activating skill: ${path.basename(skillPath)}`);
+
+        const fileContent = await fs.readFile(skillFile, 'utf8');
+        const { metadata, content } = this.parseSkillFile(fileContent);
+        this.validateMetadata(metadata);
+
+        console.log(`[Skills:Stage2] ✓ Activated: ${metadata.name} (content: ${content.length} chars)`);
+
+        return {
+            name: metadata.name,
+            description: metadata.description,
+            path: skillPath,
+            content,
+            metadata
+        };
+    }
+
+    /**
+     * [Stage 3] 完全スキル読み込み: リソース含む
+     * @deprecated 段階的読み込みではloadMetadataOnly + loadActivatedSkill + loadResourceを推奨
      */
     async loadSkill(skillPath: string): Promise<Skill> {
+        console.log(`[Skills:Stage3] Loading full skill with resources: ${path.basename(skillPath)}`);
         try {
             const skillFile = path.join(skillPath, 'SKILL.md');
             const fileContent = await fs.readFile(skillFile, 'utf8');
@@ -28,6 +81,8 @@ export class SkillParser {
             const scripts = await this.loadDirectoryContents(path.join(skillPath, 'scripts'));
             const references = await this.loadDirectoryContents(path.join(skillPath, 'references'));
             const assets = await this.listDirectoryFiles(path.join(skillPath, 'assets'));
+
+            console.log(`[Skills:Stage3] ✓ Full load complete: ${metadata.name}`);
 
             return {
                 name: metadata.name,

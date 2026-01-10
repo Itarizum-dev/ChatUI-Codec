@@ -76,8 +76,13 @@ ${description}
     async validateSkill(name: string): Promise<{ valid: boolean; errors: string[] }> {
         const errors: string[] = [];
         try {
-            // キャッシュを無視して強制リロードし、詳細エラーを取得
-            const skill = await this.skillManager.loadSkillWithError(name);
+            // Stage 2: activateSkillでSKILL.md本文を読み込み検証
+            const skill = await this.skillManager.activateSkill(name);
+
+            if (!skill) {
+                errors.push(`Skill "${name}" not found or failed to load.`);
+                return { valid: false, errors };
+            }
 
             // 追加のバリデーションルールをここに実装可能
             if (skill.name !== name) {

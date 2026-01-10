@@ -1,5 +1,17 @@
 # CODEC Version History
 
+## v1.4.1 - Progressive Disclosure Cleanup (2026-01-10)
+- **Refactor**: deprecated関数を削除し、Progressive Disclosure APIに完全移行
+  - `fullSkillsCache` (未使用キャッシュ) を削除
+  - `loadAllSkills()` @deprecated関数を削除
+  - `getSkill()` @deprecated関数を削除
+  - 未使用の `Skill` 型インポートを削除
+- **Fix**: `skillCreator.validateSkill()` を `activateSkill()` API使用に更新
+- **API**: SkillManagerはStage 1-3のProgressive Disclosure APIのみを公開
+  - Stage 1: `discoverSkills()`, `getAvailableSkills()`
+  - Stage 2: `activateSkill()`
+  - Stage 3: `loadSkillResource()`
+
 ## v1.4.0 - Docker & Streaming Improvements (2026-01-10)
 - **Refactor**: Dockerfile構成の簡略化・整理
   - Backend: 3ステージ→2ステージに削減（冗長なdepsステージを削除）
