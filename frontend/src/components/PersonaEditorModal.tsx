@@ -138,8 +138,14 @@ export default function PersonaEditorModal({
     };
 
     const handleDelete = (persona: Persona) => {
-        if (persona.isBuiltIn) return;
-        if (!confirm(`Delete "${persona.codename}"?`)) return;
+        // Built-in 'system' cannot be deleted
+        if (persona.isBuiltIn && persona.id === 'system') return;
+
+        const confirmMsg = persona.isBuiltIn
+            ? `Delete default character "${persona.codename}"? You can restore it by clearing browser data.`
+            : `Delete "${persona.codename}"?`;
+
+        if (!confirm(confirmMsg)) return;
         onDelete(persona.id);
     };
 
@@ -323,7 +329,7 @@ export default function PersonaEditorModal({
                                             >
                                                 EDIT
                                             </button>
-                                            {!persona.isBuiltIn && (
+                                            {(!persona.isBuiltIn || persona.id !== 'system') && (
                                                 <button
                                                     className={styles.deleteBtn}
                                                     onClick={() => handleDelete(persona)}

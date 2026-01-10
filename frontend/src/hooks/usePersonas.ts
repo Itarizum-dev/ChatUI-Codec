@@ -10,6 +10,7 @@ import { PERSONAS as BUILTIN_PERSONAS } from '@/config/providers';
 
 const STORAGE_KEY = 'codec_custom_personas';
 const BUILTIN_PROMPTS_KEY = 'codec_builtin_prompts'; // ビルトインのプロンプト編集用
+const DELETED_BUILTINS_KEY = 'codec_deleted_builtins'; // 削除されたビルトインID
 
 interface UsePersonasReturn {
     personas: Persona[];
@@ -23,6 +24,7 @@ interface UsePersonasReturn {
 export function usePersonas(): UsePersonasReturn {
     const [customPersonas, setCustomPersonas] = useState<Persona[]>([]);
     const [builtinPrompts, setBuiltinPrompts] = useState<Record<string, string>>({});
+    const [deletedBuiltinIds, setDeletedBuiltinIds] = useState<string[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from localStorage on mount
@@ -37,6 +39,11 @@ export function usePersonas(): UsePersonasReturn {
             const savedPrompts = localStorage.getItem(BUILTIN_PROMPTS_KEY);
             if (savedPrompts) {
                 setBuiltinPrompts(JSON.parse(savedPrompts));
+            }
+            // Load deleted builtins
+            const savedDeleted = localStorage.getItem(DELETED_BUILTINS_KEY);
+            if (savedDeleted) {
+                setDeletedBuiltinIds(JSON.parse(savedDeleted));
             }
         } catch (e) {
             console.error('[usePersonas] Failed to load:', e);
@@ -64,13 +71,25 @@ export function usePersonas(): UsePersonasReturn {
         }
     }, [builtinPrompts, isLoaded]);
 
+    // Save deleted builtins when they change
+    useEffect(() => {
+        if (!isLoaded) return;
+        try {
+            localStorage.setItem(DELETED_BUILTINS_KEY, JSON.stringify(deletedBuiltinIds));
+        } catch (e) {
+            console.error('[usePersonas] Failed to save deleted builtins:', e);
+        }
+    }, [deletedBuiltinIds, isLoaded]);
+
     // Merge builtin personas with custom ones
     const personas: Persona[] = [
         // Builtin personas with potentially modified system prompts
-        ...BUILTIN_PERSONAS.map(p => ({
-            ...p,
-            systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
-        })),
+        ...BUILTIN_PERSONAS
+            .filter(p => !deletedBuiltinIds.includes(p.id)) // Filter out deleted built-ins
+            .map(p => ({
+                ...p,
+                systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
+            })),
         // Custom personas
         ...customPersonas,
     ];
@@ -105,10 +124,14 @@ export function usePersonas(): UsePersonasReturn {
     }, []);
 
     const deletePersona = useCallback((id: string): boolean => {
-        // Cannot delete builtin personas
+        // Check if it's a builtin persona
         const builtin = BUILTIN_PERSONAS.find(p => p.id === id);
         if (builtin) {
-            return false;
+            // "System" persona cannot be deleted
+            if (id === 'system') return false;
+
+            setDeletedBuiltinIds(prev => [...prev, id]);
+            return true;
         }
 
         setCustomPersonas(prev => prev.filter(p => p.id !== id));
