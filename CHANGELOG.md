@@ -23,6 +23,11 @@
   - Mobile Menuボタン, Memory Editorボタンに説明を表示し、初見ユーザーの利便性を向上
 - **UI**: MCP設定ボタンのスタイルを調整（他のボタンと輝度を統一）
 
+## v1.6.4 - Bugfix: Skill List Display (2026-01-10)
+- **Fix**: `/skill` コマンド実行時にスキル名ではなく `[object Object]` と表示される不具合を修正
+  - バックエンドからのレスポンス形式に合わせて、正しく `name` と `description` を表示するように変更
+
+
 
 ## v1.6.0 - Persona Editor & UI Polish (2026-01-10)
 - **Feature**: ペルソナエディタ機能の実装

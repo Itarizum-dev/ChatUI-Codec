@@ -366,10 +366,16 @@ export default function CodecPage() {
                 const res = await fetch(`${getBackendUrl()}/api/skills`);
                 if (!res.ok) throw new Error("Failed to fetch skills");
                 const data = await res.json();
-                const skills = data.skills as string[];
+                // Define minimal interface for received data
+                interface SkillSummary {
+                    name: string;
+                    description: string;
+                    path: string;
+                }
+                const skills = data.skills as SkillSummary[];
 
                 const content = "**Available Skills**\n\n" + (skills.length > 0
-                    ? skills.map(s => `- ${s}`).join('\n')
+                    ? skills.map(s => `- **${s.name}**: ${s.description}`).join('\n')
                     : "No skills found.");
 
                 const sysMessage: Message = {
