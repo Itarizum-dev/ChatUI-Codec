@@ -3,12 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import styles from "./page.module.css";
 import { Message, LLMProvider, Persona } from "@/types";
-import { PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, getBackendUrl, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
+import { PERSONAS as BUILTIN_PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, getBackendUrl, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import McpSettingsModal from '@/components/McpSettingsModal';
+import PersonaEditorModal from '@/components/PersonaEditorModal';
 import { CodeBlock } from '@/components/CodeBlock';
 import { useCodecSound } from '@/hooks/useCodecSound';
+import { usePersonas } from '@/hooks/usePersonas';
 import SkillList from '@/components/skills/SkillList';
 import SkillDetailModal from '@/components/skills/SkillDetailModal';
 
@@ -59,6 +61,10 @@ export default function CodecPage() {
     const [useMcp, setUseMcp] = useState(false);
     const [showMcpSettings, setShowMcpSettings] = useState(false);
     const [toolStatus, setToolStatus] = useState<string | null>(null);
+
+    // Personas State (Custom Hook)
+    const { personas, addPersona, updatePersona, deletePersona, resetBuiltinPrompt } = usePersonas();
+    const [showPersonaEditor, setShowPersonaEditor] = useState(false);
 
     // Mobile Menu State
     const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -801,7 +807,7 @@ export default function CodecPage() {
                                 <div className={styles.mobileSection}>
                                     <div className={styles.mobileSectionTitle}>CONTACTS</div>
                                     <div className={styles.mobileContactList}>
-                                        {activeTab === 'contacts' && PERSONAS.map((persona) => (
+                                        {activeTab === 'contacts' && personas.map((persona) => (
                                             <div
                                                 key={persona.id}
                                                 className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
@@ -816,7 +822,7 @@ export default function CodecPage() {
 
                                                         // After animation, switch
                                                         setTimeout(() => {
-                                                            const p = PERSONAS.find(p => p.id === persona.id);
+                                                            const p = personas.find(p => p.id === persona.id);
                                                             if (p) setCurrentPersona(p);
                                                             setIsCalling(false);
                                                             setCallingTarget(null);
@@ -839,34 +845,49 @@ export default function CodecPage() {
                                                 </div>
                                             </div>
                                         ))}
-                                    </div>
-                                </div>
-
-                                {/* Mobile System Data */}
-                                <div className={styles.mobileSection}>
-                                    <div className={styles.mobileSectionTitle}>SYSTEM</div>
-                                    <div className={styles.systemData}>
-                                        <div className={styles.dataRow}>
-                                            <span>MUTE</span>
-                                            <span onClick={handleMuteToggle} style={{ textDecoration: 'underline' }}>
-                                                {isMuted ? 'ON' : 'OFF'}
+                                        {/* Memory Editor Button - Mobile */}
+                                        <div
+                                            className={styles.contactItem}
+                                            style={{
+                                                border: '1px dashed var(--codec-green-dim)',
+                                                opacity: 0.7,
+                                                justifyContent: 'center',
+                                                marginTop: '8px',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={() => setShowPersonaEditor(true)}
+                                        >
+                                            <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
+                                                [ MEMORY EDITOR ]
                                             </span>
                                         </div>
-                                        <div className={styles.dataRow}>
-                                            <span>CMD LIST</span>
-                                            <span onClick={() => {
-                                                handleHelpClick();
-                                                setShowMobileMenu(false);
-                                            }} style={{ textDecoration: 'underline' }}>
-                                                /HELP
-                                            </span>
+                                    </div>
+
+                                    {/* Mobile System Data */}
+                                    <div className={styles.mobileSection}>
+                                        <div className={styles.mobileSectionTitle}>SYSTEM</div>
+                                        <div className={styles.systemData}>
+                                            <div className={styles.dataRow}>
+                                                <span>MUTE</span>
+                                                <span onClick={handleMuteToggle} style={{ textDecoration: 'underline' }}>
+                                                    {isMuted ? 'ON' : 'OFF'}
+                                                </span>
+                                            </div>
+                                            <div className={styles.dataRow}>
+                                                <span>CMD LIST</span>
+                                                <span onClick={() => {
+                                                    handleHelpClick();
+                                                    setShowMobileMenu(false);
+                                                }} style={{ textDecoration: 'underline' }}>
+                                                    /HELP
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    )
-                }
+                    )}
 
                 {/* Center - Chat Area */}
                 <main className={styles.codecChatPanel}>
@@ -889,15 +910,14 @@ export default function CodecPage() {
                                     </div>
                                 )}
                                 {messages.map((msg) => {
-                                    // console.log('[Render] Message:', msg.role, 'content length:', msg.content?.length, 'content:', msg.content?.slice(0, 30));
                                     const isUser = msg.role === 'user';
                                     const isSystem = msg.role === 'system';
                                     const persona = !isUser && !isSystem
-                                        ? (PERSONAS.find(p => p.id === msg.personaId) || currentPersona)
+                                        ? (personas.find(p => p.id === msg.personaId) || currentPersona)
                                         : null;
                                     const iconSrc = isUser
                                         ? "/portraits/soldier_me.png"
-                                        : (persona?.portraitUrl || null);
+                                        : (persona?.portraitData || persona?.portraitUrl || null);
                                     const iconAlt = isUser ? "ME" : isSystem ? "SYS" : (persona?.codename || "Unknown");
 
                                     // Toggle thinking panel collapse
@@ -917,7 +937,7 @@ export default function CodecPage() {
                                                 {iconSrc ? (
                                                     <img src={iconSrc} alt={iconAlt} />
                                                 ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--codec-green-mid)' }}>
+                                                    <div className={styles.fallbackIcon}>
                                                         {iconAlt[0]}
                                                     </div>
                                                 )}
@@ -1074,38 +1094,58 @@ export default function CodecPage() {
                     </div>
 
                     {activeTab === 'contacts' ? (
-                        PERSONAS.map((persona) => (
+                        <>
+                            {personas.map((persona) => (
+                                <div
+                                    key={persona.id}
+                                    className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
+                                    onClick={() => {
+                                        if (currentPersona.id === persona.id || isCalling) return;
+
+                                        setIsCalling(true);
+                                        setCallingTarget(persona);
+                                        playCallSound();
+
+                                        // Wait for sound duration (approx 1.5s) before switching
+                                        setTimeout(() => {
+                                            setCurrentPersona(persona);
+                                            setIsCalling(false);
+                                            setCallingTarget(null);
+                                        }, 1500);
+                                    }}
+                                >
+                                    <div className={styles.contactIcon}>
+                                        {(persona.portraitData || persona.portraitUrl) ? (
+                                            <img src={persona.portraitData || persona.portraitUrl} alt={persona.codename} />
+                                        ) : (
+                                            <div className={styles.fallbackIcon}>
+                                                {persona.codename[0]}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={styles.contactInfoMini}>
+                                        <div className={styles.contactName}>{persona.codename}</div>
+                                        <div className={styles.contactFreq}>{persona.frequency}</div>
+                                    </div>
+                                </div>
+                            ))}
+                            {/* Memory Editor Button - Integrated into list */}
                             <div
-                                key={persona.id}
-                                className={`${styles.contactItem} ${currentPersona.id === persona.id ? styles.active : ''}`}
-                                onClick={() => {
-                                    if (currentPersona.id === persona.id || isCalling) return;
-
-                                    setIsCalling(true);
-                                    setCallingTarget(persona);
-                                    playCallSound();
-
-                                    // Wait for sound duration (approx 1.5s) before switching
-                                    setTimeout(() => {
-                                        setCurrentPersona(persona);
-                                        setIsCalling(false);
-                                        setCallingTarget(null);
-                                    }, 1500);
+                                className={styles.contactItem}
+                                style={{
+                                    border: '1px dashed var(--codec-green-dim)',
+                                    opacity: 0.7,
+                                    justifyContent: 'center',
+                                    marginTop: '8px',
+                                    cursor: 'pointer'
                                 }}
+                                onClick={() => setShowPersonaEditor(true)}
                             >
-                                <div className={styles.contactIcon}>
-                                    {persona.portraitUrl ? (
-                                        <img src={persona.portraitUrl} alt={persona.codename} />
-                                    ) : (
-                                        persona.codename[0]
-                                    )}
-                                </div>
-                                <div className={styles.contactInfoMini}>
-                                    <div className={styles.contactName}>{persona.codename}</div>
-                                    <div className={styles.contactFreq}>{persona.frequency}</div>
-                                </div>
+                                <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
+                                    [ MEMORY EDITOR ]
+                                </span>
                             </div>
-                        ))
+                        </>
                     ) : (
                         <SkillList onSelectSkill={setViewingSkill} />
                     )}
@@ -1135,7 +1175,7 @@ export default function CodecPage() {
                             TOKENS: <span className={styles.tokenValue}>{totalTokens}</span>
                         </div>
                     </div>
-                </aside>
+                </aside >
             </div >
 
             {/* Config Modal - LLM Selection Only */}
@@ -1283,18 +1323,33 @@ export default function CodecPage() {
                 )
             }
 
-            {/* MCP Settings Modal */}
+            {/* Mcp Settings Modal */}
             <McpSettingsModal
                 isOpen={showMcpSettings}
                 onClose={() => setShowMcpSettings(false)}
-                backendUrl={BACKEND_URL}
+                backendUrl={getBackendUrl()}
+            />
+
+            {/* Persona Editor Modal */}
+            <PersonaEditorModal
+                isOpen={showPersonaEditor}
+                onClose={() => setShowPersonaEditor(false)}
+                personas={personas}
+                onAdd={addPersona}
+                onUpdate={updatePersona}
+                onDelete={deletePersona}
+                onResetBuiltinPrompt={resetBuiltinPrompt}
             />
 
             {/* Skill Detail Modal */}
-            <SkillDetailModal
-                skillName={viewingSkill}
-                onClose={() => setViewingSkill(null)}
-            />
+            {
+                viewingSkill && (
+                    <SkillDetailModal
+                        skillName={viewingSkill}
+                        onClose={() => setViewingSkill(null)}
+                    />
+                )
+            }
         </>
     );
 }

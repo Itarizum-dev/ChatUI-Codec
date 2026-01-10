@@ -16,6 +16,8 @@ export interface Persona {
     frequency: string;
     systemPrompt: string;
     portraitUrl?: string;
+    isBuiltIn?: boolean;      // 組み込みキャラかどうか
+    portraitData?: string;    // Base64画像データ（カスタムペルソナ用）
 }
 
 // Chat Message

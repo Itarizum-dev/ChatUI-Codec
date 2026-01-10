@@ -1,5 +1,18 @@
 # CODEC Version History
 
+## v1.6.0 - Persona Editor & UI Polish (2026-01-10)
+- **Feature**: ペルソナエディタ機能の実装
+  - コンタクトリストに追加された `[ MEMORY EDITOR ]` ボタンから起動
+  - カスタムペルソナの新規作成、編集、削除、画像アップロード機能
+  - Local Storageによるカスタムペルソナの永続化
+- **UI**: 画像生成プロンプトヒント機能
+  - エディタ内にコピー可能なプロンプト雛形（アニメ調・顔アップ）を表示
+  - アップロードエリアの右側に配置し、スペースを有効活用
+- **UI**: SYSTEMペルソナのデザイン改善
+  - SYSTEMの画像（ポートレート）を削除
+  - 画像なし時のフォールバックアイコンを、Skillsリストと統一感のあるデザイン（Codeフォント、背景色）に変更
+- **Maintain**: コードベースの整理とLintエラー修正
+
 ## v1.5.0 - Skills & Tools Enhancement (2026-01-10)
 - **Feature**: Anthropics公式スキル15個をインポート
   - algorithmic-art, brand-guidelines, canvas-design, doc-coauthoring, docx, frontend-design, internal-comms, mcp-builder, pdf, pptx, slack-gif-creator, theme-factory, web-artifacts-builder, webapp-testing, xlsx

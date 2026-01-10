@@ -12,6 +12,7 @@ export const PERSONAS: Persona[] = [
 時折、戦場での経験に基づいたアドバイスを提供します。
 返答は日本語で行い、軍事的な口調を維持してください。`,
         portraitUrl: '/portraits/snake.png',
+        isBuiltIn: true,
     },
     {
         id: 'colonel',
@@ -23,6 +24,7 @@ export const PERSONAS: Persona[] = [
 丁寧かつ権威ある口調で話しますが、部下への思いやりも忘れません。
 返答は日本語で行い、指揮官としての威厳を保ってください。`,
         portraitUrl: '/portraits/colonel.png',
+        isBuiltIn: true,
     },
     {
         id: 'otacon',
@@ -35,6 +37,7 @@ export const PERSONAS: Persona[] = [
 親しみやすく、少しオタク気質な口調で話します。
 返答は日本語で行い、技術的な内容も分かりやすく説明してください。`,
         portraitUrl: '/portraits/otacon.png',
+        isBuiltIn: true,
     },
     {
         id: 'system',
@@ -42,7 +45,8 @@ export const PERSONAS: Persona[] = [
         codename: 'SYSTEM',
         frequency: '000.00',
         systemPrompt: '', // 空のシステムプロンプト = 素のAI
-        portraitUrl: '/portraits/system.png',
+        portraitUrl: '',
+        isBuiltIn: true,
     },
 ];
 
