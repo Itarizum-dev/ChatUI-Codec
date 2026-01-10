@@ -203,7 +203,7 @@ export default function PersonaEditorModal({
 
                                         {(!persona.isBuiltIn || persona.id !== 'system') && (
                                             <>
-                                                {/* Portrait Upload for custom */}
+                                                {/* Portrait Upload for custom or non-system builtins */}
                                                 <div className={styles.imageSection}>
                                                     <div
                                                         className={`${styles.dropzone} ${dragActive ? styles.dragActive : ''}`}
