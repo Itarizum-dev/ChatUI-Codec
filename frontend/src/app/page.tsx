@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import styles from "./page.module.css";
 import { Message, LLMProvider, Persona } from "@/types";
-import { PERSONAS as BUILTIN_PERSONAS, DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, getBackendUrl, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
+import { DEFAULT_PERSONA, DEFAULT_LLM, BACKEND_URL, getBackendUrl, fetchAvailableModels, modelToProvider, ModelsResponse, FALLBACK_PROVIDERS } from "@/config/providers";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import McpSettingsModal from '@/components/McpSettingsModal';

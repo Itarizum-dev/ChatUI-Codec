@@ -1,16 +1,28 @@
 /**
  * usePersonas Hook
  * ペルソナのCRUD操作とlocalStorage永続化を管理
+ * ファイルベースのペルソナ(public/data/personas.json)と
+ * ローカルストレージベースのカスタムペルソナを統合する
  */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Persona } from '@/types';
-import { PERSONAS as BUILTIN_PERSONAS } from '@/config/providers';
 
 const STORAGE_KEY = 'codec_custom_personas';
 const BUILTIN_PROMPTS_KEY = 'codec_builtin_prompts'; // ビルトインのプロンプト編集用
 const DELETED_BUILTINS_KEY = 'codec_deleted_builtins'; // 削除されたビルトインID
+
+// SYSTEMペルソナは常に存在するハードコードされた定義
+const SYSTEM_PERSONA: Persona = {
+    id: 'system',
+    name: 'AI Assistant',
+    codename: 'SYSTEM',
+    frequency: '000.00',
+    systemPrompt: '', // 空のシステムプロンプト = 素のAI
+    portraitUrl: '',
+    isBuiltIn: true,
+};
 
 interface UsePersonasReturn {
     personas: Persona[];
@@ -19,56 +31,81 @@ interface UsePersonasReturn {
     deletePersona: (id: string) => boolean;
     getPersona: (id: string) => Persona | undefined;
     resetBuiltinPrompt: (id: string) => void;
+    isLoading: boolean;
 }
 
 export function usePersonas(): UsePersonasReturn {
+    const [filePersonas, setFilePersonas] = useState<Persona[]>([]);
     const [customPersonas, setCustomPersonas] = useState<Persona[]>([]);
     const [builtinPrompts, setBuiltinPrompts] = useState<Record<string, string>>({});
     const [deletedBuiltinIds, setDeletedBuiltinIds] = useState<string[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
 
-    // Load from localStorage on mount
+    // Initial Data Load
     useEffect(() => {
-        try {
-            // Load custom personas
-            const savedCustom = localStorage.getItem(STORAGE_KEY);
-            let parsedCustom: Persona[] = savedCustom ? JSON.parse(savedCustom) : [];
+        const loadData = async () => {
+            try {
+                // 1. Load File Personas (Async)
+                // まずユーザー独自のペルソナ定義(personas.json)の取得を試みる
+                // 失敗した場合はサンプル(personas.sample.json)ではなく、空リストとする（ユーザー要望）
+                let loadedFilePersonas: Persona[] = [];
+                try {
+                    const res = await fetch('/data/personas.json');
+                    if (res.ok) {
+                        loadedFilePersonas = await res.json();
+                    } else {
+                        console.log('[usePersonas] personas.json not found, using minimal setup.');
+                    }
+                } catch (e) {
+                    console.warn('[usePersonas] Failed to fetch personas.json:', e);
+                }
+                setFilePersonas(loadedFilePersonas);
 
-            // Add default user persona if not exists
-            const hasUser = parsedCustom.some(p => p.isUser);
-            if (!hasUser) {
-                const defaultUser: Persona = {
-                    id: 'user-me',
-                    name: 'ME',
-                    codename: 'AGENT',
-                    frequency: '140.00', // Dummy
-                    systemPrompt: '',
-                    isBuiltIn: false,
-                    isUser: true,
-                    portraitUrl: '/portraits/agent.png'
-                };
-                parsedCustom = [...parsedCustom, defaultUser];
-                setCustomPersonas(parsedCustom);
-                // Save immediately to ensure it exists
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedCustom));
-            } else {
-                setCustomPersonas(parsedCustom);
-            }
+                // 2. Load LocalStorage Data
+                // Custom Personas
+                const savedCustom = localStorage.getItem(STORAGE_KEY);
+                let parsedCustom: Persona[] = savedCustom ? JSON.parse(savedCustom) : [];
 
-            // Load modified builtin prompts
-            const savedPrompts = localStorage.getItem(BUILTIN_PROMPTS_KEY);
-            if (savedPrompts) {
-                setBuiltinPrompts(JSON.parse(savedPrompts));
+                // Add default user persona if not exists
+                const hasUser = parsedCustom.some(p => p.isUser);
+                if (!hasUser) {
+                    const defaultUser: Persona = {
+                        id: 'user-me',
+                        name: 'ME',
+                        codename: 'AGENT',
+                        frequency: '140.00',
+                        systemPrompt: '',
+                        isBuiltIn: false,
+                        isUser: true, // User flag
+                        portraitUrl: '/portraits/agent.png'
+                    };
+                    parsedCustom = [...parsedCustom, defaultUser];
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedCustom));
+                }
+                setCustomPersonas(parsedCustom);
+
+                // Builtin Prompts
+                const savedPrompts = localStorage.getItem(BUILTIN_PROMPTS_KEY);
+                if (savedPrompts) {
+                    setBuiltinPrompts(JSON.parse(savedPrompts));
+                }
+
+                // Deleted Builtins
+                const savedDeleted = localStorage.getItem(DELETED_BUILTINS_KEY);
+                if (savedDeleted) {
+                    setDeletedBuiltinIds(JSON.parse(savedDeleted));
+                }
+
+            } catch (e) {
+                console.error('[usePersonas] Critical error during initialization:', e);
+            } finally {
+                setIsLoaded(true);
+                setIsLoadingData(false);
             }
-            // Load deleted builtins
-            const savedDeleted = localStorage.getItem(DELETED_BUILTINS_KEY);
-            if (savedDeleted) {
-                setDeletedBuiltinIds(JSON.parse(savedDeleted));
-            }
-        } catch (e) {
-            console.error('[usePersonas] Failed to load:', e);
-        }
-        setIsLoaded(true);
+        };
+
+        loadData();
     }, []);
 
     // Save to localStorage when custom personas change
@@ -101,16 +138,26 @@ export function usePersonas(): UsePersonasReturn {
         }
     }, [deletedBuiltinIds, isLoaded]);
 
-    // Merge builtin personas with custom ones
+    // Construct final persona list
+    // Priority: SYSTEM > FileBased (overridden by deleted/prompts) > Custom
     const personas: Persona[] = [
-        // Builtin personas with potentially modified system prompts
-        ...BUILTIN_PERSONAS
-            .filter(p => !deletedBuiltinIds.includes(p.id)) // Filter out deleted built-ins
+        // SYSTEM (Always present, essentially a builtin)
+        {
+            ...SYSTEM_PERSONA,
+            systemPrompt: builtinPrompts[SYSTEM_PERSONA.id] ?? SYSTEM_PERSONA.systemPrompt
+        },
+
+        // File-based personas (treated as builtin)
+        ...filePersonas
+            .filter(p => !deletedBuiltinIds.includes(p.id))
+            .filter(p => p.id !== 'system') // Prevent ID collision if JSON contains system
             .map(p => ({
                 ...p,
+                isBuiltIn: true, // Force built-in flag for file-loaded personas
                 systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
             })),
-        // Custom personas
+
+        // Custom personas (localStorage)
         ...customPersonas,
     ];
 
@@ -124,9 +171,11 @@ export function usePersonas(): UsePersonasReturn {
     }, []);
 
     const updatePersona = useCallback((id: string, updates: Partial<Persona>) => {
-        // Check if it's a builtin persona
-        const builtin = BUILTIN_PERSONAS.find(p => p.id === id);
-        if (builtin) {
+        // SYSTEM or File Persons are "built-in" context
+        const isSystem = id === SYSTEM_PERSONA.id;
+        const isFilePersona = filePersonas.some(p => p.id === id);
+
+        if (isSystem || isFilePersona) {
             // Only allow updating the system prompt for builtins
             if (updates.systemPrompt !== undefined) {
                 setBuiltinPrompts(prev => ({
@@ -141,14 +190,16 @@ export function usePersonas(): UsePersonasReturn {
         setCustomPersonas(prev =>
             prev.map(p => (p.id === id ? { ...p, ...updates } : p))
         );
-    }, []);
+    }, [filePersonas]);
 
     const deletePersona = useCallback((id: string): boolean => {
-        // Check if it's a builtin persona
-        const builtin = BUILTIN_PERSONAS.find(p => p.id === id);
-        if (builtin) {
+        // SYSTEM or File Persons are "built-in" context
+        const isSystem = id === SYSTEM_PERSONA.id;
+        const isFilePersona = filePersonas.some(p => p.id === id);
+
+        if (isSystem || isFilePersona) {
             // "System" persona cannot be deleted
-            if (id === 'system') return false;
+            if (isSystem) return false;
 
             setDeletedBuiltinIds(prev => [...prev, id]);
             return true;
@@ -156,7 +207,7 @@ export function usePersonas(): UsePersonasReturn {
 
         setCustomPersonas(prev => prev.filter(p => p.id !== id));
         return true;
-    }, []);
+    }, [filePersonas]);
 
     const getPersona = useCallback((id: string): Persona | undefined => {
         return personas.find(p => p.id === id);
@@ -177,6 +228,7 @@ export function usePersonas(): UsePersonasReturn {
         deletePersona,
         getPersona,
         resetBuiltinPrompt,
+        isLoading: isLoadingData,
     };
 }
 

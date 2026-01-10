@@ -41,3 +41,6 @@ backend/data/mcp-settings.json
 # SBOM (can be regenerated)
 sbom-*.json
 SBOM_SUMMARY.md
+
+# Persona Data
+frontend/public/data/personas.json
