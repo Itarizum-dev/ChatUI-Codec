@@ -161,7 +161,11 @@ export function usePersonas(): UsePersonasReturn {
             })),
 
         // Custom personas (localStorage)
-        ...customPersonas,
+        ...customPersonas.filter(p => {
+            // If filePersonas has a user defined, hide the localStorage one to avoid duplicates
+            if (p.isUser && filePersonas.some(fp => fp.isUser)) return false;
+            return true;
+        }),
     ];
 
     const addPersona = useCallback((personaData: Omit<Persona, 'id' | 'isBuiltIn'>) => {
