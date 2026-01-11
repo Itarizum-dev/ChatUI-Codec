@@ -6,7 +6,7 @@
 ![Codec UI Screenshot](/frontend/public/og-image.png?raw=true)
 
 ## 特徴
-- 🤖 **Multi-LLM Support**: Google Gemini, Anthropic Claude, OpenAI, そしてローカルの Ollama に完全対応。
+- 🤖 **Multi-LLM Support**: Google Gemini, Anthropic Claude, OpenAI, そしてローカルの Ollama に完全対応。(クラウドLLMはAPIが必要になります)
 - 🛠 **MCP (Model Context Protocol)**: Claude Desktop互換のMCPをサポート。Web検索、ファイル操作、GitHub連携など、AIの機能を無限に拡張可能。
 - ⚡️ **Agent Skills**: `SKILL.md` (Markdown) で手順を定義するだけで、AIに複雑なタスクを自律的に実行させることが可能。
 - 📟 **Retro Aesthetics**: 走査線、モノクロームグリーン、ドット絵による、没入感のあるレトロなUI体験。
