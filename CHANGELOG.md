@@ -1,5 +1,11 @@
 # CODEC Version History
 
+## v1.7.3 - Security Audit & Cleanup (2026-01-11)
+- **Security**: 公開リポジトリ向けにセキュリティ監査を実施
+  - `mcp-settings.json` の削除（Git追跡対象外化）
+  - パスをマスクした `mcp-settings.sample.json` の同梱
+  - 過去のGit履歴（タグ）の秘密情報スキャン完了 (AIza, sk-, etc)
+
 ## v1.7.2 - Global Documentation Release (2026-01-11)
 - **Docs**: READMEの国際化対応
   - デフォルトの `README.md` を英語化し、グローバル公開に対応
