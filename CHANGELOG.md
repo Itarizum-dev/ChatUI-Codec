@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## v1.8.0 - OpenAI Chat Support (2026-01-11)
+- **Feature**: OpenAIチャット機能の完全サポート (`openai-gpt-4o` 等)
+  - バックエンドでのチャットハンドラー (`handleOpenAIChat`) 実装
+  - ストリーミング通信 (SSE) によるリアルタイム応答
+  - ツール利用 (Tool Use) 対応 (MCPツールおよびbuiltinツール)
+  - Thinkingモード (`<think>` タグ) の表示対応
+
 ## v1.7.3 - Security Audit & Cleanup (2026-01-11)
 - **Security**: 公開リポジトリ向けにセキュリティ監査を実施
   - `mcp-settings.json` の削除（Git追跡対象外化）

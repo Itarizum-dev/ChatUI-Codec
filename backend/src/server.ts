@@ -668,6 +668,12 @@ app.post('/api/chat', async (req: Request, res: Response) => {
                 provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; }
             );
+
+        } else if (provider.type === 'openai') {
+            fullContent = await handleOpenAIChat(
+                provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
+                (p, c) => { promptTokens = p; completionTokens = c; }
+            );
         }
 
         // Send metadata as final chunk
@@ -1457,6 +1463,277 @@ async function handleOllamaChat(
         } catch (error) {
             clearTimeout(timeoutId);
             throw error;
+        }
+    }
+
+    return fullContent;
+}
+
+// ============================================
+// OpenAI Handler with Tool Loop
+// ============================================
+async function handleOpenAIChat(
+    provider: import('./types').LLMProvider,
+    systemPrompt: string | undefined,
+    context: import('./types').Message[] | undefined,
+    message: string,
+    mcpTools: McpTool[],
+    builtinTools: BuiltinTool[],
+    res: Response,
+    setTokens: (prompt: number, completion: number) => void
+): Promise<string> {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+
+    // Build conversation messages
+    let messages: Array<{ role: string; content: string | null; tool_calls?: any[]; tool_call_id?: string }> = [
+        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+        ...formatContext(context).map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: message },
+    ];
+
+    console.log(`[OpenAI] Sending ${messages.length} messages to ${provider.model}`);
+
+    let fullContent = '';
+    const MAX_TOOL_ITERATIONS = 10;
+
+    // Combine MCP tools and built-in tools for LLM
+    const allTools = [
+        ...toOllamaTools(mcpTools), // OpenAI uses same tool format as Ollama (standard JSON schema)
+        ...builtinToOllamaTools(builtinTools)
+    ];
+
+    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+        // o1 models generally don't support system messages or streaming in the same way (preview)
+        const isO1 = provider.model.startsWith('o1');
+        const requestBody: Record<string, unknown> = {
+            model: provider.model,
+            messages,
+            stream: !isO1,
+        };
+
+        if (!isO1 && allTools.length > 0) {
+            requestBody.tools = allTools;
+            requestBody.tool_choice = 'auto';
+        }
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            let errorMessage = errText;
+            try {
+                const errJson = JSON.parse(errText);
+                errorMessage = errJson.error?.message || errText;
+            } catch (e) { }
+            throw new Error(`OpenAI Error (${response.status}): ${errorMessage}`);
+        }
+
+        // Handle Non-Streaming (e.g. o1)
+        if (!requestBody.stream) {
+            const data = await response.json() as any;
+            const choice = data.choices?.[0];
+            const content = choice?.message?.content || '';
+            const toolCalls = choice?.message?.tool_calls;
+
+            if (content) {
+                fullContent += content;
+                res.write(JSON.stringify({ content }) + '\n');
+            }
+
+            if (data.usage) {
+                setTokens(data.usage.prompt_tokens, data.usage.completion_tokens);
+            }
+
+            if (toolCalls && toolCalls.length > 0) {
+                messages.push(choice.message);
+
+                for (const tc of toolCalls) {
+                    const func = tc.function;
+                    console.log(`[Tool] Tool call received (OpenAI Non-Stream): ${func.name}`);
+                    res.write(JSON.stringify({ toolCall: { name: func.name, args: JSON.parse(func.arguments) } }) + '\n');
+
+                    let resultText: string;
+                    try {
+                        const args = JSON.parse(func.arguments);
+                        const builtinTool = findBuiltinTool(func.name);
+                        if (builtinTool) {
+                            resultText = await builtinTool.execute(args);
+                        } else {
+                            const [serverName, toolName] = func.name.split('__');
+                            if (!serverName || !toolName) {
+                                resultText = `Error: Invalid tool name format`;
+                            } else {
+                                const toolResult = await mcpManager.callTool(serverName, toolName, args);
+                                resultText = toolResult.content.map(c => c.text || '').join('\n');
+                            }
+                        }
+                    } catch (e: any) {
+                        resultText = `Error execution tool: ${e.message}`;
+                    }
+
+                    res.write(JSON.stringify({ toolResult: { name: func.name, result: resultText.slice(0, 200) } }) + '\n');
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: tc.id,
+                        content: resultText
+                    } as any);
+                }
+                continue; // Loop again with tool results
+            }
+            break; // Done if no tools
+        }
+
+        // Handle Streaming
+        if (response.body) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            let currentContent = '';
+            let currentToolCalls: Map<number, { id: string; name: string; args: string }> = new Map();
+            let insideThinking = false;
+            let capturedThinking = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6);
+                        if (dataStr.trim() === '[DONE]') continue;
+
+                        try {
+                            const json = JSON.parse(dataStr);
+                            const delta = json.choices?.[0]?.delta;
+
+                            if (json.usage) {
+                                setTokens(json.usage.prompt_tokens, json.usage.completion_tokens);
+                            }
+
+                            if (delta) {
+                                if (delta.content) {
+                                    const text = delta.content;
+                                    let textToProcess = text;
+
+                                    // Parse <think> tags logic
+                                    if (!insideThinking) {
+                                        if (textToProcess.includes('<think>')) {
+                                            const parts = textToProcess.split('<think>');
+                                            if (parts[0]) {
+                                                currentContent += parts[0];
+                                                fullContent += parts[0];
+                                                res.write(JSON.stringify({ content: parts[0] }) + '\n');
+                                            }
+                                            insideThinking = true;
+                                            textToProcess = parts[1] || '';
+                                        }
+                                    }
+
+                                    if (insideThinking) {
+                                        if (textToProcess.includes('</think>')) {
+                                            const parts = textToProcess.split('</think>');
+                                            capturedThinking += parts[0];
+                                            res.write(JSON.stringify({ thinking: parts[0] }) + '\n');
+                                            res.write(JSON.stringify({ thinkingDone: true }) + '\n');
+                                            insideThinking = false;
+                                            if (parts[1]) {
+                                                currentContent += parts[1];
+                                                fullContent += parts[1];
+                                                res.write(JSON.stringify({ content: parts[1] }) + '\n');
+                                            }
+                                        } else {
+                                            capturedThinking += textToProcess;
+                                            res.write(JSON.stringify({ thinking: textToProcess }) + '\n');
+                                        }
+                                    } else {
+                                        if (textToProcess) {
+                                            currentContent += textToProcess;
+                                            fullContent += textToProcess;
+                                            res.write(JSON.stringify({ content: textToProcess }) + '\n');
+                                        }
+                                    }
+                                }
+
+                                if (delta.tool_calls) {
+                                    for (const tc of delta.tool_calls) {
+                                        const index = tc.index;
+                                        if (!currentToolCalls.has(index)) {
+                                            currentToolCalls.set(index, { id: '', name: '', args: '' });
+                                        }
+                                        const current = currentToolCalls.get(index)!;
+                                        if (tc.id) current.id = tc.id;
+                                        if (tc.function?.name) current.name += tc.function.name;
+                                        if (tc.function?.arguments) current.args += tc.function.arguments;
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            // ignore parse error
+                        }
+                    }
+                }
+            }
+
+            const finalToolCalls = Array.from(currentToolCalls.values());
+            if (finalToolCalls.length > 0) {
+                messages.push({
+                    role: 'assistant',
+                    content: currentContent || null,
+                    tool_calls: finalToolCalls.map(ft => ({
+                        id: ft.id,
+                        type: 'function',
+                        function: { name: ft.name, arguments: ft.args }
+                    }))
+                });
+
+                for (const ft of finalToolCalls) {
+                    console.log(`[Tool] Tool call received (OpenAI Stream): ${ft.name}`);
+                    let args = {};
+                    try { args = JSON.parse(ft.args); } catch (e) { console.error('JSON parse error for args', e); }
+
+                    res.write(JSON.stringify({ toolCall: { name: ft.name, args } }) + '\n');
+
+                    let resultText: string;
+                    const builtinTool = findBuiltinTool(ft.name);
+                    if (builtinTool) {
+                        resultText = await builtinTool.execute(args as Record<string, unknown>);
+                    } else {
+                        const [serverName, toolName] = ft.name.split('__');
+                        if (!serverName || !toolName) {
+                            resultText = `Error: Invalid tool name format`;
+                        } else {
+                            try {
+                                const toolResult = await mcpManager.callTool(serverName, toolName, args);
+                                resultText = toolResult.content.map(c => c.text || '').join('\n');
+                            } catch (e: any) {
+                                resultText = `Error: ${e.message}`;
+                            }
+                        }
+                    }
+
+                    res.write(JSON.stringify({ toolResult: { name: ft.name, result: resultText.slice(0, 200) } }) + '\n');
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: ft.id,
+                        content: resultText
+                    } as any);
+                }
+                continue;
+            }
+            break;
         }
     }
 
