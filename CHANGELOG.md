@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## v1.7.2 - Global Documentation Release (2026-01-11)
+- **Docs**: READMEの国際化対応
+  - デフォルトの `README.md` を英語化し、グローバル公開に対応
+  - 日本語版ドキュメントを `README.ja.md` として分離
+  - 各ドキュメントに言語切り替えリンクを追加
+  - クラウドLLM利用時のAPIキー要件を明記
+
 ## v1.7.1 - Public Release Preparation (2026-01-11)
 - **Feature**: ペルソナデータの外部化とカスタム対応
   - `personas.json` によるユーザー定義ペルソナの管理（Git除外）

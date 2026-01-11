@@ -1,108 +1,110 @@
 # CODEC Chat UI - Retro Sci-Fi AI Interface
 
-レトロフューチャーな無線機（CODEC）をモチーフにした、没入型AIチャットインターフェースです。
-ローカルLLM (Ollama) や、Gemini, Claude, OpenAI などの主要なAIモデルと会話ができ、**MCP (Model Context Protocol)** や **Agent Skills** といった高度なエージェント機能をサポートしています。
+[日本語版 (Japanese Version)](./README.ja.md)
+
+An immersive AI chat interface inspired by retro-futuristic wireless communicators (CODEC).
+Communicate with local LLMs (Ollama) as well as major AI models like Gemini, Claude, and OpenAI. It supports advanced agent features such as **MCP (Model Context Protocol)** and **Agent Skills**.
 
 ![Codec UI Screenshot](/frontend/public/og-image.png?raw=true)
 
-## 特徴
-- 🤖 **Multi-LLM Support**: Google Gemini, Anthropic Claude, OpenAI, そしてローカルの Ollama に完全対応。(クラウドLLMはAPIが必要になります)
-- 🛠 **MCP (Model Context Protocol)**: Claude Desktop互換のMCPをサポート。Web検索、ファイル操作、GitHub連携など、AIの機能を無限に拡張可能。
-- ⚡️ **Agent Skills**: `SKILL.md` (Markdown) で手順を定義するだけで、AIに複雑なタスクを自律的に実行させることが可能。
-- 📟 **Retro Aesthetics**: 走査線、モノクロームグリーン、ドット絵による、没入感のあるレトロなUI体験。
-- 🏠 **Local First**: Ollama + Docker で、プライバシーを守りながらローカル環境で動作。
+## Features
+- 🤖 **Multi-LLM Support**: Full support for Google Gemini, Anthropic Claude, OpenAI, and local Ollama. (Cloud LLMs require separate API keys)
+- 🛠 **MCP (Model Context Protocol)**: Supports Claude Desktop-compatible MCP. Infinitely extend AI capabilities with web search, file operations, GitHub integration, and more.
+- ⚡️ **Agent Skills**: Define procedures in `SKILL.md` (Markdown) to allow the AI to autonomously execute complex tasks.
+- 📟 **Retro Aesthetics**: An immersive retro UI experience involving scanlines, monochrome green, and pixel art.
+- 🏠 **Local First**: Runs locally with Ollama + Docker, ensuring privacy.
 
-## 機能ガイド
+## Feature Guide
 
 ### ⚙️ MCP (Model Context Protocol)
-**「MCP ON/OFF」** ボタンで切り替えます。
-標準化されたプロトコル「MCP」を通じて、AIが外部ツールを安全に使用できます。
-- 画面右下の設定ボタンから、接続するMCPサーバーを管理可能。
-- ファイルシステム操作、ブラウザ制御、データベース接続など、エージェント的な振る舞いを実現します。
+Toggle with the **"MCP ON/OFF"** button.
+Allows AI to safely use external tools via the standardized "MCP" protocol.
+- Manage connected MCP servers via the settings button at the bottom right.
+- Enables agent-like behaviors such as file system operations, browser control, and database connections.
 
-### ⚡️ Skills (スキルシステム)
-AIに特定のタスク手順を教える「スキル」機能です。
-`/skills` ディレクトリにMarkdownファイル (`SKILL.md`) を置くだけで、AIはその手順を理解し、実行できるようになります。
-- 例: 文書作成、コードレビュー、データ分析などの定型業務を自動化。
-- チャット欄で `/skill` と入力すると、利用可能なスキル一覧を確認できます。
+### ⚡️ Skills
+Teach the AI specific task procedures.
+Simply place a Markdown file (`SKILL.md`) in the `/skills` directory, and the AI will understand and execute the procedure.
+- Examples: Automating routine tasks like document creation, code review, and data analysis.
+- Type `/skill` in the chat to see a list of available skills.
 
-### 👥 ペルソナ切替 (Frequency)
-右側のパネルには、周波数（Frequency）ごとの通信チャンネルが表示されています。
-クリックすることで、AIの口調や役割（ペルソナ）を瞬時に切り替えることができます。
-- **140.85 (Tactical)**: 冷静沈着な現場のプロフェッショナル。
-- **141.12 (Command)**: 的確な指示を与える指揮官タイプ。
-- **141.80 (Science)**: 技術的な解説を得意とするエンジニアタイプ。
+### 👥 Persona Switching (Frequency)
+The right panel displays communication channels by Frequency.
+Click to instantly switch the AI's tone and role (Persona).
+- **140.85 (Tactical)**: A calm and composed field professional.
+- **141.12 (Command)**: A commander type giving precise instructions.
+- **141.80 (Science)**: An engineer type excelling in technical explanations.
 
-### 🧠 Thinking Mode (思考モード)
-**「🧠 ON/OFF」** ボタンで切り替えます (対応モデル専用)。
-DeepSeek-R1 や Qwen などの Chain of Thought（思考プロセス）に対応しており、AIが回答に至るまでの「思考のログ」を視覚化します。
+### 🧠 Thinking Mode
+Toggle with the **"🧠 ON/OFF"** button (supported models only).
+Supports Chain of Thought models like DeepSeek-R1 and Qwen, initializing a visual "log of thoughts" leading up to the AI's response.
 
-## 必要条件
-- **Docker Desktop**: 推奨（ワンコマンドで起動可能）
-- または **Node.js**: v18以上（手動セットアップの場合）
-- **Ollama**: ローカルLLMを使用する場合
+## Requirements
+- **Docker Desktop**: Recommended (Launch with a single command)
+- Or **Node.js**: v18+ (For manual setup)
+- **Ollama**: If using local LLMs
 
-## クイックスタート (Docker を使用) 🐳
+## Quick Start (Using Docker) 🐳
 
-Docker Desktopがインストールされていれば、以下のコマンドだけで起動できます。
+If Docker Desktop is installed, you can launch with just the following commands:
 
 ```bash
-# 1. リポジトリのクローン
+# 1. Clone the repository
 git clone https://github.com/Itarizum-dev/ChatUI-Codec.git
 cd ChatUI-Codec
 
-# 2. 環境変数の設定
+# 2. Configure environment variables
 cp backend/.env.example backend/.env
-# backend/.env を編集して、必要なAPIキー (Google, Anthropic等) を入力
+# Edit backend/.env and enter necessary API keys (Google, Anthropic, etc.)
 
-# 3. ビルド＆起動
+# 3. Build & Run
 docker compose up --build
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) にアクセスすると起動します。
+Access [http://localhost:3000](http://localhost:3000) in your browser to start.
 
-### 停止方法
+### How to Stop
 ```bash
 docker compose down
 ```
 
-### Ollamaを使用する場合
-Docker版でローカルOllamaを使用するには、**ホスト側（Mac/Windows/Linux）でOllamaを起動しておく**必要があります。
-Docker Compose の設定により、自動的に `host.docker.internal` 経由でホストのOllamaに接続します。
+### Using Ollama
+To use local Ollama with the Docker version, **Ollama must be running on the host side (Mac/Windows/Linux)**.
+Docker Compose is configured to automatically connect to the host's Ollama via `host.docker.internal`.
 
 ---
 
-## 手動セットアップ (Node.js を使用)
+## Manual Setup (Using Node.js)
 
-Dockerを使わない場合は、以下の手順でセットアップできます。
+If not using Docker, follow these steps:
 
-### 1. リポジトリのクローン
+### 1. Clone the repository
 ```bash
 git clone https://github.com/Itarizum-dev/ChatUI-Codec.git
 cd ChatUI-Codec
 ```
 
-### 2. 環境変数の設定
-BackendとFrontendそれぞれに設定ファイル (`.env`) を用意します。
+### 2. Configure environment variables
+Prepare `.env` files for both Backend and Frontend.
 
-**Backend (APIキーなど)**
+**Backend (API Keys, etc.)**
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# .envファイルを編集して、必要なAPIキー (Google, Anthropic等) を入力してください
+# Edit .env and enter necessary API keys (Google, Anthropic, etc.)
 ```
 
-**Frontend (UI設定)**
+**Frontend (UI Settings)**
 ```bash
 cd ../frontend
 npm install
 cp .env.example .env
-# 基本的にそのままでOKです
+# Generally, no changes are needed
 ```
 
-### 3. アプリケーションの起動
-BackendとFrontendを別々のターミナルで起動します。
+### 3. Launch the Application
+Start Backend and Frontend in separate terminals.
 
 **Terminal 1 (Backend)**
 ```bash
@@ -116,31 +118,31 @@ cd frontend
 npm run dev
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) にアクセスすると起動します。
+Access [http://localhost:3000](http://localhost:3000) in your browser to start.
 
-## 外部からのアクセス (ngrok)
-友人に画面を見せたり、スマホからアクセスしたい場合は `ngrok` を使います。
+## External Access (ngrok)
+Use `ngrok` to show your screen to a friend or access from a smartphone.
 
-1. [ngrokのインストールと認証](https://ngrok.com/download)を済ませます。
-2. アプリ起動中に、新しいターミナルで以下を実行します：
+1. Install and authenticate [ngrok](https://ngrok.com/download).
+2. While the app is running, execute the following in a new terminal:
    ```bash
    ngrok http 3000
    ```
-3. 表示された `https://...` のURLにアクセスします。
-（注意⚠️）APIが共有されるため不特定多数の公開は危険です。
+3. Access the displayed `https://...` URL.
+(Caution ⚠️) Exposing APIs to the public can be dangerous.
 
-## 🚀 ペルソナのセットアップ (初期化)
+## 🚀 Persona Setup (Initialization)
 
-インストール直後は、AIアシスタント (SYSTEM) とあなた (ME) のみが表示されます。
-デフォルトのキャラクター達と会話するには、以下のコマンドでペルソナデータをコピーしてください。
+Immediately after installation, only the AI Assistant (SYSTEM) and You (ME) are displayed.
+To chat with the default characters, copy the persona data using the following command:
 
 ```bash
 cp frontend/public/data/personas.sample.json frontend/public/data/personas.json
 ```
 
-### カスタマイズについて
-作成された `personas.json` を編集することで、キャラクターの設定を変更したり、新しいペルソナを追加したりできます（Git管理外のため、プライベートな設定も可能です）。
-基本的にはアプリ上のカスタマイズすることができますがブラウザ保存のため、別環境で使用したい場合は直接編集してください。
+### Customization
+You can edit the created `personas.json` to change character settings or add new personas (Private settings are possible as this file is ignored by Git).
+You can basically customize within the app, but since it saves to browser storage, edit the file directly if you want to use it in a different environment.
 
-## ライセンス
+## License
 MIT License
