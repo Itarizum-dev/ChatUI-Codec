@@ -15,6 +15,11 @@ export interface Persona {
     frequency: string;
     systemPrompt: string;
     portraitUrl?: string;
+    // オーケストレーション用拡張
+    preferredLLM?: string;
+    allowedSkills?: string[];
+    allowedTools?: string[];
+    isOrchestrator?: boolean;
 }
 
 export interface Message {
@@ -47,6 +52,7 @@ export interface ChatRequest {
     systemPrompt?: string;
     useMcp?: boolean;
     useThinking?: boolean; // Ollamaのthinkingモード有効化
+    useOrchestrator?: boolean; // オーケストレーターモード有効化
 }
 
 export interface ChatResponse {

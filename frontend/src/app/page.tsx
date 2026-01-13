@@ -664,7 +664,10 @@ export default function CodecPage() {
                         <div className={`${styles.mcpGroup} ${styles.tooltipContainer}`}>
                             <button
                                 className={styles.mcpSettingsBtn}
-                                onClick={() => setShowMcpSettings(true)}
+                                onClick={() => {
+                                    playOpenSound();
+                                    setShowMcpSettings(true);
+                                }}
                                 title="" // Disable default title
                             >
                                 MCP SETTING
@@ -703,6 +706,7 @@ export default function CodecPage() {
                             <button
                                 className={styles.llmConfigBtn}
                                 onClick={() => {
+                                    playOpenSound();
                                     refreshModels();
                                     setShowSelector(true);
                                 }}
@@ -728,6 +732,7 @@ export default function CodecPage() {
                             className={styles.portraitFrame}
                             style={{ height: '90px', width: '90px', marginBottom: '5px', cursor: 'pointer' }}
                             onClick={() => {
+                                playOpenSound();
                                 const userPersona = personas.find(p => p.isUser);
                                 if (userPersona) {
                                     setEditingPersonaId(userPersona.id);
@@ -952,7 +957,10 @@ export default function CodecPage() {
                                                 marginTop: '8px',
                                                 cursor: 'pointer'
                                             }}
-                                            onClick={() => setShowPersonaEditor(true)}
+                                            onClick={() => {
+                                                playOpenSound();
+                                                setShowPersonaEditor(true);
+                                            }}
                                         >
                                             <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
                                                 [ MEMORY EDITOR ]
@@ -1264,7 +1272,10 @@ export default function CodecPage() {
                                             cursor: 'pointer',
                                             width: '100%'
                                         }}
-                                        onClick={() => setShowPersonaEditor(true)}
+                                        onClick={() => {
+                                            playOpenSound();
+                                            setShowPersonaEditor(true);
+                                        }}
                                     >
                                         <span style={{ color: 'var(--codec-green-mid)', fontSize: '0.85rem', letterSpacing: '1px' }}>
                                             [ MEMORY EDITOR ]

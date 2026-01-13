@@ -16,7 +16,11 @@ export interface Persona {
     frequency: string;
     systemPrompt: string;
     portraitUrl?: string;
-    isBuiltIn?: boolean;      // 組み込みキャラかどうか
+    // オーケストレーション用拡張
+    preferredLLM?: string;        // 将来: このペルソナ専用のLLM
+    allowedSkills?: string[];     // 使用可能なスキル名リスト (空=全て)
+    allowedTools?: string[];      // 使用可能なビルトインツール制限 (空=全て)
+    isOrchestrator?: boolean;     // オーケストレーターとして動作
     isUser?: boolean;         // ユーザー自身かどうか
     portraitData?: string;    // Base64画像データ（カスタムペルソナ用）
 }
@@ -60,6 +64,8 @@ export interface DebugPayload {
         type: string;
         data: unknown;
         timestamp: number;
+        // サブエージェント用拡張
+        agentId?: string;
     }>;
     meta: {
         tokens?: {
@@ -90,6 +96,7 @@ export interface ChatRequest {
     personaId?: string;
     context?: Message[];
     systemPrompt?: string;
+    useOrchestrator?: boolean;
 }
 
 export interface ChatResponse {

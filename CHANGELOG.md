@@ -1,5 +1,9 @@
 # CODEC Version History
 
+## v1.9.1 - UI Interaction Sounds (2026-01-13)
+- **Audio**: モーダル展開時の効果音を追加
+  - MCP設定、LLM設定、ペルソナエディタの展開時にスタート音を再生し、没入感を向上
+
 ## v1.9.0 - LLM Debug Viewer (2026-01-13)
 - **Feature**: LLM Debug Viewerを実装
   - ヘッダーに「DEBUG ON/OFF」トグルボタンを追加
