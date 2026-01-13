@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## v1.8.1 - Frontend Dockerfile Modernization (2026-01-13)
+- **Docker**: frontendのDockerfileを最新のベストプラクティスに更新
+  - ベースイメージを `node:20-alpine` から `node:20-slim` (Debian-based) に変更
+  - `libc6-compat` 依存を削除（glibcベースのため不要）
+  - ユーザー作成コマンドを Alpine形式 (`adduser/addgroup`) から Debian形式 (`useradd/groupadd`) に更新
+  - 企業CA証明書環境やネイティブモジュールとの互換性を向上
+
 ## v1.8.0 - OpenAI Chat Support (2026-01-11)
 - **Feature**: OpenAIチャット機能の完全サポート (`openai-gpt-4o` 等)
   - バックエンドでのチャットハンドラー (`handleOpenAIChat`) 実装
