@@ -417,20 +417,15 @@ app.post('/api/skills/validate', async (req, res) => {
 // Chat API
 // ============================================
 
-// Helper to format context with character names
+// Helper to format context for LLM
+// Note: We intentionally do NOT add character prefixes to assistant messages here.
+// Adding prefixes like [TACTICAL]: to historical messages causes LLM confusion,
+// especially when the conversation has multiple persona switches.
+// The persona context is already provided in the system prompt.
 const formatContext = (context?: import('./types').Message[]) => {
     return context?.map((m) => {
-        let content = m.content;
-        if (m.role === 'assistant' && m.personaId) {
-            const p = PERSONAS.find((per) => per.id === m.personaId);
-            if (p) {
-                const prefix = `[${p.codename}]:`;
-                if (!content.trim().startsWith(prefix)) {
-                    content = `${prefix} ${content}`;
-                }
-            }
-        }
-        return { role: m.role, content };
+        // Return plain content without persona prefixes
+        return { role: m.role, content: m.content };
     }) || [];
 };
 
