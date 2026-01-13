@@ -32,6 +32,7 @@ export interface Message {
     metadata?: MessageMetadata;
     thinking?: string;  // Ollamaのthinkingモードで受信した推論過程
     thinkingCollapsed?: boolean; // UI用: 折りたたみ状態
+    debugPayload?: DebugPayload; // デバッグモード用: LLMへのIN/OUT
 }
 
 // Debug/Performance Metadata
@@ -43,6 +44,34 @@ export interface MessageMetadata {
     };
     latencyMs?: number;
     model?: string;
+}
+
+// LLM Debug Payload (for debug mode)
+export interface DebugPayload {
+    request: {
+        model: string;
+        messages: Array<{ role: string; content: string }>;
+        systemPrompt?: string;
+        tools?: unknown[];
+        useMcp?: boolean;
+        useThinking?: boolean;
+    };
+    responseEvents: Array<{
+        type: string;
+        data: unknown;
+        timestamp: number;
+    }>;
+    meta: {
+        tokens?: {
+            prompt: number;
+            completion: number;
+            total: number;
+        };
+        latencyMs?: number;
+        model?: string;
+        toolCalls?: Array<{ name: string; success: boolean }>;
+        injectedSkills?: Array<{ name: string; description: string }>;
+    };
 }
 
 // Chat State

@@ -559,9 +559,13 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
     // Inject available skills into system prompt
     let enhancedSystemPrompt = systemPrompt || '';
+    let injectedSkills: Array<{ name: string; description: string }> = [];
     try {
         const skills = await skillManager.getAvailableSkills();
         if (skills.length > 0) {
+            // Capture skills for debug payload
+            injectedSkills = skills.map(s => ({ name: s.name, description: s.description }));
+
             const skillsXml = skills.map(s =>
                 `  <skill>\n    <name>${s.name}</name>\n    <description>${s.description}</description>\n    <location>${s.path}/SKILL.md</location>\n  </skill>`
             ).join('\n');
@@ -676,7 +680,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             );
         }
 
-        // Send metadata as final chunk
+        // Send metadata as final chunk (with debug payload)
         const metadata: MessageMetadata = {
             model: provider.model,
             tokens: {
@@ -686,7 +690,24 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             },
             latencyMs: Date.now() - startTime,
         };
-        res.write(JSON.stringify({ metadata }) + '\n');
+
+        // Build debug payload for frontend debug mode
+        const debugPayload = {
+            request: {
+                model: provider.model,
+                messages: formatContext(context).concat([{ role: 'user', content: message }]),
+                systemPrompt: enhancedSystemPrompt?.slice(0, 2000) + (enhancedSystemPrompt?.length > 2000 ? '... [truncated]' : ''),
+                tools: [...mcpTools.map(t => ({ name: `${t.serverName}__${t.name}`, type: 'mcp' })), ...builtinTools.map(t => ({ name: t.name, type: 'builtin' }))],
+                useMcp,
+                useThinking,
+            },
+            meta: {
+                ...metadata,
+                injectedSkills,
+            },
+        };
+
+        res.write(JSON.stringify({ metadata, debugPayload }) + '\n');
         res.end();
 
     } catch (error) {
