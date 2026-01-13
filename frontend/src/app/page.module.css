@@ -1421,3 +1421,71 @@
 .messageRow.user .fallbackIcon {
     color: var(--codec-green-bright);
 }
+
+/* ===== DEBUG PANEL ===== */
+.debugPanel {
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(0, 15, 8, 0.9);
+    border: 1px solid var(--codec-green-dim);
+    border-left: 3px solid #ff9800;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.debugHeader {
+    color: #ff9800;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    font-size: 0.7rem;
+}
+
+.debugSection {
+    margin-bottom: 8px;
+    border: 1px solid var(--codec-green-dim);
+    background: rgba(0, 10, 5, 0.8);
+}
+
+.debugSection summary {
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--codec-green-mid);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    user-select: none;
+}
+
+.debugSection summary:hover {
+    color: var(--codec-green-bright);
+    background: rgba(0, 40, 20, 0.4);
+}
+
+.debugSection[open] summary {
+    border-bottom: 1px solid var(--codec-green-dim);
+    color: var(--codec-green-bright);
+}
+
+.debugCode {
+    margin: 0;
+    padding: 10px;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+    color: var(--codec-green-dark);
+    font-size: 0.65rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.debugCode::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.debugCode::-webkit-scrollbar-thumb {
+    background: var(--codec-green-dim);
+    border-radius: 3px;
+}

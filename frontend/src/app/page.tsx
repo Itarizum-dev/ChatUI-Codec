@@ -74,6 +74,9 @@ export default function CodecPage() {
     const [useThinking, setUseThinking] = useState(false);
     const [thinkingError, setThinkingError] = useState<string | null>(null);
 
+    // Debug mode state (show LLM IN/OUT)
+    const [debugMode, setDebugMode] = useState(false);
+
     // IME Composition State for Japanese input
     const [isComposing, setIsComposing] = useState(false);
 
@@ -543,7 +546,12 @@ export default function CodecPage() {
                             setMessages((prev) =>
                                 prev.map((msg) =>
                                     msg.id === assistantMessageId
-                                        ? { ...msg, metadata: json.metadata }
+                                        ? {
+                                            ...msg,
+                                            metadata: json.metadata,
+                                            // Store debug payload if available
+                                            debugPayload: json.debugPayload || msg.debugPayload
+                                        }
                                         : msg
                                 )
                             );
@@ -676,6 +684,19 @@ export default function CodecPage() {
                             </button>
                             <span className={styles.tooltipText}>
                                 思考プロセス(Chain of Thought)を表示します
+                            </span>
+                        </div>
+                        <div className={styles.tooltipContainer}>
+                            <button
+                                className={`${styles.mcpToggle} ${debugMode ? styles.active : ''}`}
+                                onClick={() => setDebugMode(!debugMode)}
+                                title=""
+                                style={{ marginRight: '8px' }}
+                            >
+                                {debugMode ? 'DEBUG ON 🔍' : 'DEBUG OFF'}
+                            </button>
+                            <span className={styles.tooltipText}>
+                                LLMへのリクエスト/レスポンス詳細を表示
                             </span>
                         </div>
                         <div className={`${styles.tooltipContainer} ${styles.tooltipRight}`}>
@@ -1091,6 +1112,27 @@ export default function CodecPage() {
                                                         <span className={styles.cursorBlock}></span>
                                                     )}
                                                 </div>
+
+                                                {/* Debug Panel - Show when debug mode is ON */}
+                                                {debugMode && msg.role === 'assistant' && msg.debugPayload && (
+                                                    <div className={styles.debugPanel}>
+                                                        <div className={styles.debugHeader}>
+                                                            <span>🔍 LLM DEBUG</span>
+                                                        </div>
+                                                        <details className={styles.debugSection}>
+                                                            <summary>📥 REQUEST (IN)</summary>
+                                                            <pre className={styles.debugCode}>
+                                                                {JSON.stringify(msg.debugPayload.request, null, 2)}
+                                                            </pre>
+                                                        </details>
+                                                        <details className={styles.debugSection}>
+                                                            <summary>📊 META</summary>
+                                                            <pre className={styles.debugCode}>
+                                                                {JSON.stringify(msg.debugPayload.meta, null, 2)}
+                                                            </pre>
+                                                        </details>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
