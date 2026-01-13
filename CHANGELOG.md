@@ -1,5 +1,14 @@
 # CODEC Version History
 
+## v1.9.0 - LLM Debug Viewer (2026-01-13)
+- **Feature**: LLM Debug Viewerを実装
+  - ヘッダーに「DEBUG ON/OFF」トグルボタンを追加
+  - ONにすると各アシスタントメッセージの下にデバッグパネルが表示
+  - 📥 REQUEST (IN): モデル名、メッセージ履歴、システムプロンプト、ツール一覧、設定フラグ
+  - 📊 META: トークン数、レイテンシ、使用モデル、注入されたスキル一覧
+- **Backend**: `debugPayload` をストリームレスポンスに追加
+- **Types**: `DebugPayload` インターフェースと `Message.debugPayload` フィールドを追加
+
 ## v1.8.1 - Frontend Dockerfile Modernization (2026-01-13)
 - **Docker**: frontendのDockerfileを最新のベストプラクティスに更新
   - ベースイメージを `node:20-alpine` から `node:20-slim` (Debian-based) に変更
