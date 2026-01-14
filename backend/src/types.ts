@@ -20,6 +20,9 @@ export interface Persona {
     allowedSkills?: string[];
     allowedTools?: string[];
     isOrchestrator?: boolean;
+    isBuiltIn?: boolean;
+    isUser?: boolean;
+    portraitData?: string;
 }
 
 export interface Message {

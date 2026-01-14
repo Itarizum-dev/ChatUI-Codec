@@ -1,5 +1,10 @@
 # CODEC Version History
 
+## v1.9.2 - Type Definition Fix (2025-01-14)
+- **Fix**: `isBuiltIn` プロパティがPersona型定義から欠落していた問題を修正
+  - フロントエンド/バックエンド両方の型定義に `isBuiltIn`, `isUser`, `portraitData` を追加
+  - ペルソナエディタでの「not exist」エラーを解消
+
 ## v1.9.1 - UI Interaction Sounds (2026-01-13)
 - **Audio**: モーダル展開時の効果音を追加
   - MCP設定、LLM設定、ペルソナエディタの展開時にスタート音を再生し、没入感を向上

@@ -21,8 +21,9 @@ export interface Persona {
     allowedSkills?: string[];     // 使用可能なスキル名リスト (空=全て)
     allowedTools?: string[];      // 使用可能なビルトインツール制限 (空=全て)
     isOrchestrator?: boolean;     // オーケストレーターとして動作
-    isUser?: boolean;         // ユーザー自身かどうか
-    portraitData?: string;    // Base64画像データ（カスタムペルソナ用）
+    isBuiltIn?: boolean;          // 組み込みキャラかどうか
+    isUser?: boolean;             // ユーザー自身かどうか
+    portraitData?: string;        // Base64画像データ（カスタムペルソナ用）
 }
 
 // Chat Message
