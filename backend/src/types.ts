@@ -56,6 +56,7 @@ export interface ChatRequest {
     useMcp?: boolean;
     useThinking?: boolean; // Ollamaのthinkingモード有効化
     useOrchestrator?: boolean; // オーケストレーターモード有効化
+    allowedSkills?: string[]; // ペルソナに許可されたスキル (空配列=スキルなし, undefined=全許可)
 }
 
 export interface ChatResponse {

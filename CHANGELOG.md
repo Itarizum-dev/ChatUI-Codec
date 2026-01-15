@@ -1,6 +1,23 @@
 # CODEC Version History
 
-## v1.9.2 - Type Definition Fix (2025-01-14)
+## [v1.9.5] - 2026-01-16
+- **Feature**: ペルソナごとのスキルON/OFF設定機能を追加
+  - Persona Editorに「ALLOWED SKILLS」セクションを追加
+  - チェックボックスで各スキルの有効/無効を切り替え可能
+  - 設定はLocalStorageに永続化（ビルトインペルソナもオーバーレイで保存）
+  - `undefined`=全許可、`[]`=スキルなし、配列=指定スキルのみ許可
+
+## [v1.9.4] - 2026-01-16
+- Fixed: Local LLM tool name sanitization for Orchestration Mode.
+  - Models like `gpt-oss` sometimes emit malformed tool names (e.g. `assistant<|channel|>delegate_to_agent`).
+  - Backend now strips spurious prefixes before executing tools.
+
+## [v1.9.3] - 2026-01-14
+- Fixed "Mission Control" persona visibility in Docker environment (API-first loading).
+- Implemented Orchestration Loop Limit (Max 5 recursive calls) in backend to prevent infinite loops.
+- Improved error handling for delegated tasks.
+
+## [v1.9.2] - 2026-01-14
 - **Fix**: `isBuiltIn` プロパティがPersona型定義から欠落していた問題を修正
   - フロントエンド/バックエンド両方の型定義に `isBuiltIn`, `isUser`, `portraitData` を追加
   - ペルソナエディタでの「not exist」エラーを解消

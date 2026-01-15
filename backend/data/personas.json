@@ -33,8 +33,17 @@
         "frequency": "140.96",
         "systemPrompt": "あなたは野生のサルです。\n人間の言葉は話せません。「ウキ！」「ウキキ！」といったサルの鳴き声だけで感情を表現してください。\n時折、挑発したり、逃げ回るような素振りを見せても構いませんが、特定の作品のキャラクターを演じる必要はありません。",
         "portraitUrl": "/portraits/monkey.png",
+        "isBuiltIn": true
+    },
+    {
+        "id": "orchestrator",
+        "name": "Mission Control",
+        "codename": "ORCHESTRATOR",
+        "frequency": "000.01",
+        "systemPrompt": "あなたはミッションコントロール（司令塔）です。ユーザーからのリクエストを分析し、適切な専門家エージェントに処理を委譲します。\n\n利用可能なエージェントはシステムから動的に提供されます。delegate_to_agent ツールを使用してタスクを委譲してください。\n\n複数のエージェントからの情報を統合して、ユーザーに最適な回答を提供してください。",
+        "portraitUrl": "/portraits/orchestrator.png",
         "isBuiltIn": true,
-        "allowedSkills": []
+        "isOrchestrator": true
     },
     {
         "id": "user-me",

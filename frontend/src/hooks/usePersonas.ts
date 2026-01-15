@@ -142,26 +142,33 @@ export function usePersonas(): UsePersonasReturn {
     }, [deletedBuiltinIds, isLoaded]);
 
     // Construct final persona list
-    // Priority: SYSTEM > FileBased (overridden by deleted/prompts) > Custom
+    // Priority: SYSTEM > FileBased (overridden by deleted/prompts/skills) > Custom
     const personas: Persona[] = [
         // SYSTEM (Always present, essentially a builtin)
         {
             ...SYSTEM_PERSONA,
-            systemPrompt: builtinPrompts[SYSTEM_PERSONA.id] ?? SYSTEM_PERSONA.systemPrompt
+            systemPrompt: builtinPrompts[SYSTEM_PERSONA.id] ?? SYSTEM_PERSONA.systemPrompt,
+            allowedSkills: customPersonas.find(p => p.id === `builtin-override-${SYSTEM_PERSONA.id}`)?.allowedSkills,
         },
 
         // File-based personas (treated as builtin)
         ...filePersonas
             .filter(p => !deletedBuiltinIds.includes(p.id))
             .filter(p => p.id !== 'system') // Prevent ID collision if JSON contains system
-            .map(p => ({
-                ...p,
-                isBuiltIn: true, // Force built-in flag for file-loaded personas
-                systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
-            })),
+            .map(p => {
+                const override = customPersonas.find(cp => cp.id === `builtin-override-${p.id}`);
+                return {
+                    ...p,
+                    isBuiltIn: true, // Force built-in flag for file-loaded personas
+                    systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
+                    allowedSkills: override?.allowedSkills ?? p.allowedSkills,
+                };
+            }),
 
-        // Custom personas (localStorage)
+        // Custom personas (localStorage), excluding override entries
         ...customPersonas.filter(p => {
+            // Exclude builtin override entries (they're for internal use only)
+            if (p.id.startsWith('builtin-override-')) return false;
             // If filePersonas has a user defined, hide the localStorage one to avoid duplicates
             if (p.isUser && filePersonas.some(fp => fp.isUser)) return false;
             return true;
@@ -183,12 +190,36 @@ export function usePersonas(): UsePersonasReturn {
         const isFilePersona = filePersonas.some(p => p.id === id);
 
         if (isSystem || isFilePersona) {
-            // Only allow updating the system prompt for builtins
-            if (updates.systemPrompt !== undefined) {
+            // Allow updating system prompt and allowedSkills for builtins
+            if (updates.systemPrompt !== undefined || updates.allowedSkills !== undefined) {
+                // Save to builtin overrides in localStorage
                 setBuiltinPrompts(prev => ({
                     ...prev,
-                    [id]: updates.systemPrompt!,
+                    [id]: updates.systemPrompt ?? prev[id] ?? '',
                 }));
+                // Save allowedSkills to custom personas storage as overlay
+                if (updates.allowedSkills !== undefined) {
+                    setCustomPersonas(prev => {
+                        const existing = prev.find(p => p.id === `builtin-override-${id}`);
+                        if (existing) {
+                            return prev.map(p =>
+                                p.id === `builtin-override-${id}`
+                                    ? { ...p, allowedSkills: updates.allowedSkills }
+                                    : p
+                            );
+                        }
+                        // Create overlay entry for builtin persona skills
+                        return [...prev, {
+                            id: `builtin-override-${id}`,
+                            name: '',
+                            codename: '',
+                            frequency: '',
+                            systemPrompt: '',
+                            allowedSkills: updates.allowedSkills,
+                            isBuiltIn: false,
+                        }];
+                    });
+                }
             }
             return;
         }
