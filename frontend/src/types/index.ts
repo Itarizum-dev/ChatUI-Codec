@@ -98,6 +98,7 @@ export interface ChatRequest {
     context?: Message[];
     systemPrompt?: string;
     useOrchestrator?: boolean;
+    allowedSkills?: string[]; // ペルソナに許可されたスキル (空配列=スキルなし, undefined=全許可)
 }
 
 export interface ChatResponse {

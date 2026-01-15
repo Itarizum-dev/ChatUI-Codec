@@ -550,13 +550,28 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     res.write(JSON.stringify({ type: 'ping' }) + '\n');
 
     const body: ChatRequest = req.body;
-    const { message, providerId, context, systemPrompt, useMcp, useThinking } = body;
+    const { message, providerId, context, systemPrompt, useMcp, useThinking, allowedSkills } = body;
 
-    // Inject available skills into system prompt
+    // Inject available skills into system prompt (filtered by allowedSkills)
     let enhancedSystemPrompt = systemPrompt || '';
     let injectedSkills: Array<{ name: string; description: string }> = [];
     try {
-        const skills = await skillManager.getAvailableSkills();
+        let skills = await skillManager.getAvailableSkills();
+
+        // Filter skills based on allowedSkills
+        // - undefined: all skills allowed (no filtering)
+        // - []: no skills allowed (filter all)
+        // - ['skill1', 'skill2']: only these skills allowed
+        if (allowedSkills !== undefined) {
+            if (allowedSkills.length === 0) {
+                console.log('[Skills] allowedSkills is empty array - no skills will be injected');
+                skills = [];
+            } else {
+                skills = skills.filter(s => allowedSkills.includes(s.name));
+                console.log(`[Skills] Filtered by allowedSkills: ${skills.length}/${allowedSkills.length} matched`);
+            }
+        }
+
         if (skills.length > 0) {
             // Capture skills for debug payload
             injectedSkills = skills.map(s => ({ name: s.name, description: s.description }));
@@ -1436,21 +1451,31 @@ async function handleOllamaChat(
 
                     for (const toolCall of pendingToolCalls) {
                         const fc = toolCall.function;
-                        console.log(`[Tool] Tool call received (Ollama): ${fc.name}`, JSON.stringify(fc.arguments));
 
-                        res.write(JSON.stringify({ toolCall: { name: fc.name, args: fc.arguments } }) + '\n');
+                        // Sanitize tool name: some local LLMs emit spurious prefixes
+                        // e.g., "assistant<|channel|>delegate_to_agent" -> "delegate_to_agent"
+                        let sanitizedToolName = fc.name;
+                        const pipeIdx = sanitizedToolName.lastIndexOf('|>');
+                        if (pipeIdx !== -1) {
+                            sanitizedToolName = sanitizedToolName.slice(pipeIdx + 2);
+                            console.warn(`[Tool] Sanitized tool name: "${fc.name}" -> "${sanitizedToolName}"`);
+                        }
+
+                        console.log(`[Tool] Tool call received (Ollama): ${sanitizedToolName}`, JSON.stringify(fc.arguments));
+
+                        res.write(JSON.stringify({ toolCall: { name: sanitizedToolName, args: fc.arguments } }) + '\n');
 
                         let resultText: string;
 
-                        const builtinTool = findBuiltinTool(fc.name);
+                        const builtinTool = findBuiltinTool(sanitizedToolName);
                         if (builtinTool) {
-                            console.log(`[Builtin] Executing ${fc.name}...`);
+                            console.log(`[Builtin] Executing ${sanitizedToolName}...`);
                             resultText = await builtinTool.execute(fc.arguments as Record<string, unknown> || {});
                         } else {
-                            const [serverName, toolName] = fc.name.split('__');
+                            const [serverName, toolName] = sanitizedToolName.split('__');
                             if (!serverName || !toolName) {
-                                console.error(`[MCP] Invalid tool name format: ${fc.name}`);
-                                resultText = `Error: Invalid tool name format: ${fc.name}`;
+                                console.error(`[MCP] Invalid tool name format: ${sanitizedToolName}`);
+                                resultText = `Error: Invalid tool name format: ${sanitizedToolName}`;
                             } else {
                                 console.log(`[MCP] Executing ${toolName} on ${serverName}...`);
                                 const toolResult = await mcpManager.callTool(serverName, toolName, fc.arguments);

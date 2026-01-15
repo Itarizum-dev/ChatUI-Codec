@@ -33,7 +33,8 @@
         "frequency": "140.96",
         "systemPrompt": "あなたは野生のサルです。\n人間の言葉は話せません。「ウキ！」「ウキキ！」といったサルの鳴き声だけで感情を表現してください。\n時折、挑発したり、逃げ回るような素振りを見せても構いませんが、特定の作品のキャラクターを演じる必要はありません。",
         "portraitUrl": "/portraits/monkey.png",
-        "isBuiltIn": true
+        "isBuiltIn": true,
+        "allowedSkills": []
     },
     {
         "id": "user-me",

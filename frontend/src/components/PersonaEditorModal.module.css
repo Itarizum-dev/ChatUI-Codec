@@ -471,3 +471,106 @@
         opacity: 1;
     }
 }
+
+/* Skill Settings Section */
+.skillsSection {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 20, 0, 0.3);
+    border: 1px solid var(--codec-green-dim);
+    border-radius: 4px;
+}
+
+.skillsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.skillsTitle {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--codec-green-mid);
+    letter-spacing: 1px;
+}
+
+.skillsCount {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: var(--codec-green-dark);
+}
+
+.skillsList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.skillItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(10, 18, 14, 0.6);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.skillItem:hover {
+    background: rgba(74, 124, 89, 0.15);
+    border-color: var(--codec-green-dim);
+}
+
+.skillItem.enabled {
+    border-color: var(--codec-green-mid);
+    background: rgba(74, 124, 89, 0.2);
+}
+
+.skillCheckbox {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--codec-green-bright);
+    cursor: pointer;
+}
+
+.skillName {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--codec-green-mid);
+    flex: 1;
+}
+
+.skillItem.enabled .skillName {
+    color: var(--codec-green-bright);
+}
+
+.skillsLoading,
+.skillsEmpty {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--codec-green-dark);
+    text-align: center;
+    padding: 12px;
+}
+
+.skillsList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.skillsList::-webkit-scrollbar-track {
+    background: rgba(20, 35, 28, 0.3);
+}
+
+.skillsList::-webkit-scrollbar-thumb {
+    background: var(--codec-green-dim);
+    border-radius: 3px;
+}
+
+.skillsList::-webkit-scrollbar-thumb:hover {
+    background: var(--codec-green-mid);
+}

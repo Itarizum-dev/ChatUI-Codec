@@ -1,5 +1,10 @@
 # CODEC Version History
 
+## [v1.9.4] - 2026-01-16
+- Fixed: Local LLM tool name sanitization for Orchestration Mode.
+  - Models like `gpt-oss` sometimes emit malformed tool names (e.g. `assistant<|channel|>delegate_to_agent`).
+  - Backend now strips spurious prefixes before executing tools.
+
 ## [v1.9.3] - 2026-01-14
 - Fixed "Mission Control" persona visibility in Docker environment (API-first loading).
 - Implemented Orchestration Loop Limit (Max 5 recursive calls) in backend to prevent infinite loops.

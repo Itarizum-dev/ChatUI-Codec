@@ -9,6 +9,13 @@ import styles from './PersonaEditorModal.module.css';
 import { Persona } from '@/types';
 import { processImageFile } from '@/hooks/usePersonas';
 
+// スキル情報の型
+interface SkillSummary {
+    name: string;
+    description: string;
+    path: string;
+}
+
 interface PersonaEditorModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -58,6 +65,32 @@ export default function PersonaEditorModal({
     const [editName, setEditName] = useState('');
     const [editCodename, setEditCodename] = useState('');
     const [editFrequency, setEditFrequency] = useState('');
+    const [editAllowedSkills, setEditAllowedSkills] = useState<string[] | undefined>(undefined);
+
+    // スキル一覧
+    const [availableSkills, setAvailableSkills] = useState<SkillSummary[]>([]);
+    const [skillsLoading, setSkillsLoading] = useState(false);
+
+    // スキル一覧を取得
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchSkills = async () => {
+            setSkillsLoading(true);
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+                const res = await fetch(`${apiUrl}/api/skills`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setAvailableSkills(data.skills || []);
+                }
+            } catch (e) {
+                console.warn('[PersonaEditor] Failed to fetch skills:', e);
+            } finally {
+                setSkillsLoading(false);
+            }
+        };
+        fetchSkills();
+    }, [isOpen]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -129,13 +162,47 @@ export default function PersonaEditorModal({
         setEditName(persona.name);
         setEditCodename(persona.codename);
         setEditFrequency(persona.frequency);
+        setEditAllowedSkills(persona.allowedSkills);
         setError(null);
+    };
+
+    // スキルのON/OFFを切り替え
+    const toggleSkill = (skillName: string) => {
+        setEditAllowedSkills(prev => {
+            // undefined（全許可）からの切り替え: 全スキルを有効にして対象を除外
+            if (prev === undefined) {
+                return availableSkills
+                    .map(s => s.name)
+                    .filter(name => name !== skillName);
+            }
+            // 既に有効な場合は無効に
+            if (prev.includes(skillName)) {
+                return prev.filter(name => name !== skillName);
+            }
+            // 無効な場合は有効に
+            return [...prev, skillName];
+        });
+    };
+
+    // スキルが有効かどうか
+    const isSkillEnabled = (skillName: string): boolean => {
+        if (editAllowedSkills === undefined) return true; // undefined = 全許可
+        return editAllowedSkills.includes(skillName);
+    };
+
+    // 有効なスキル数を取得
+    const getEnabledSkillCount = (): number => {
+        if (editAllowedSkills === undefined) return availableSkills.length;
+        return editAllowedSkills.length;
     };
 
     const handleEditSubmit = (persona: Persona) => {
         if (persona.isBuiltIn) {
-            // Only update system prompt for builtins
-            onUpdate(persona.id, { systemPrompt: editSystemPrompt });
+            // Update system prompt and skills for builtins
+            onUpdate(persona.id, {
+                systemPrompt: editSystemPrompt,
+                allowedSkills: editAllowedSkills,
+            });
         } else if (persona.isUser) {
             // Update profile fields for user
             onUpdate(persona.id, {
@@ -151,6 +218,7 @@ export default function PersonaEditorModal({
                 frequency: editFrequency.trim() || '142.00',
                 systemPrompt: editSystemPrompt,
                 portraitData: editPortraitData || undefined,
+                allowedSkills: editAllowedSkills,
             });
         }
         setEditingId(null);
@@ -294,6 +362,41 @@ export default function PersonaEditorModal({
                                                 className={styles.textarea}
                                                 rows={4}
                                             />
+                                        )}
+
+                                        {/* Skills Section - Only show for non-user personas */}
+                                        {!persona.isUser && (
+                                            <div className={styles.skillsSection}>
+                                                <div className={styles.skillsHeader}>
+                                                    <span className={styles.skillsTitle}>ALLOWED SKILLS</span>
+                                                    <span className={styles.skillsCount}>
+                                                        {getEnabledSkillCount()}/{availableSkills.length}
+                                                    </span>
+                                                </div>
+                                                {skillsLoading ? (
+                                                    <div className={styles.skillsLoading}>Loading skills...</div>
+                                                ) : availableSkills.length === 0 ? (
+                                                    <div className={styles.skillsEmpty}>No skills available</div>
+                                                ) : (
+                                                    <div className={styles.skillsList}>
+                                                        {availableSkills.map(skill => (
+                                                            <div
+                                                                key={skill.name}
+                                                                className={`${styles.skillItem} ${isSkillEnabled(skill.name) ? styles.enabled : ''}`}
+                                                                onClick={() => toggleSkill(skill.name)}
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className={styles.skillCheckbox}
+                                                                    checked={isSkillEnabled(skill.name)}
+                                                                    onChange={() => { }}
+                                                                />
+                                                                <span className={styles.skillName}>{skill.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
 
                                         <div className={styles.editActions}>
