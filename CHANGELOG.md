@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## [v1.9.5] - 2026-01-16
+- **Feature**: ペルソナごとのスキルON/OFF設定機能を追加
+  - Persona Editorに「ALLOWED SKILLS」セクションを追加
+  - チェックボックスで各スキルの有効/無効を切り替え可能
+  - 設定はLocalStorageに永続化（ビルトインペルソナもオーバーレイで保存）
+  - `undefined`=全許可、`[]`=スキルなし、配列=指定スキルのみ許可
+
 ## [v1.9.4] - 2026-01-16
 - Fixed: Local LLM tool name sanitization for Orchestration Mode.
   - Models like `gpt-oss` sometimes emit malformed tool names (e.g. `assistant<|channel|>delegate_to_agent`).
