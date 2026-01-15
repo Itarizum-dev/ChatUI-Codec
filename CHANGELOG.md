@@ -1,6 +1,11 @@
 # CODEC Version History
 
-## v1.9.2 - Type Definition Fix (2025-01-14)
+## [v1.9.3] - 2026-01-14
+- Fixed "Mission Control" persona visibility in Docker environment (API-first loading).
+- Implemented Orchestration Loop Limit (Max 5 recursive calls) in backend to prevent infinite loops.
+- Improved error handling for delegated tasks.
+
+## [v1.9.2] - 2026-01-14
 - **Fix**: `isBuiltIn` プロパティがPersona型定義から欠落していた問題を修正
   - フロントエンド/バックエンド両方の型定義に `isBuiltIn`, `isUser`, `portraitData` を追加
   - ペルソナエディタでの「not exist」エラーを解消
