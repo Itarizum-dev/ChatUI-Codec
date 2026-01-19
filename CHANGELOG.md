@@ -1,11 +1,18 @@
 # CODEC Version History
 
+## [v1.9.6] - 2026-01-20
+- **Fix**: スキルON/OFF設定が反映されない問題を修正
+  - ペルソナエディタでスキルを無効化しても、チャット送信時に全スキルがinjectされる問題を解消
+  - `currentPersona`が`personas`配列更新と同期するよう`useEffect`を追加
+  - 根本原因: ペルソナ更新後も`currentPersona`が古い値（`allowedSkills: undefined`=全許可）を保持していた
+
 ## [v1.9.5] - 2026-01-16
 - **Feature**: ペルソナごとのスキルON/OFF設定機能を追加
   - Persona Editorに「ALLOWED SKILLS」セクションを追加
   - チェックボックスで各スキルの有効/無効を切り替え可能
   - 設定はLocalStorageに永続化（ビルトインペルソナもオーバーレイで保存）
   - `undefined`=全許可、`[]`=スキルなし、配列=指定スキルのみ許可
+
 
 ## [v1.9.4] - 2026-01-16
 - Fixed: Local LLM tool name sanitization for Orchestration Mode.

@@ -115,6 +115,15 @@ export default function CodecPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    // Sync currentPersona when personas list changes (e.g., after editing skills)
+    useEffect(() => {
+        const updated = personas.find(p => p.id === currentPersona.id);
+        if (updated && JSON.stringify(updated) !== JSON.stringify(currentPersona)) {
+            setCurrentPersona(updated);
+        }
+    }, [personas, currentPersona]);
+
+
     // Fetch available models on mount and when modal opens
     const refreshModels = useCallback(async () => {
         setModelsLoading(true);
