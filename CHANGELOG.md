@@ -1,5 +1,15 @@
 # CODEC Version History
 
+## [v1.10.0] - 2026-01-21
+- **Feature**: Persona Permissions - SkillsとToolsの細粒度権限設定
+  - ペルソナエディタにタブ式UI（SKILLS/TOOLS）を追加
+  - 3つのモード：All（全許可）/ Select（個別選択）/ None（全禁止）
+  - 権限設定はlocalStorageに永続化
+- **API**: `GET /api/tools` エンドポイント追加（ビルトインツール一覧）
+- **Backend**: `permissions`に基づくSkills/Toolsフィルタリング
+  - 後方互換：旧`allowedSkills`配列も引き続きサポート
+- **Types**: `PersonaPermissions`, `PermissionSetting`インターフェース追加
+
 ## [v1.9.6] - 2026-01-20
 - **Fix**: スキルON/OFF設定が反映されない問題を修正
   - ペルソナエディタでスキルを無効化しても、チャット送信時に全スキルがinjectされる問題を解消

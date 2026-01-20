@@ -18,12 +18,25 @@ export interface Persona {
     portraitUrl?: string;
     // オーケストレーション用拡張
     preferredLLM?: string;        // 将来: このペルソナ専用のLLM
-    allowedSkills?: string[];     // 使用可能なスキル名リスト (空=全て)
-    allowedTools?: string[];      // 使用可能なビルトインツール制限 (空=全て)
+    allowedSkills?: string[];     // 後方互換用（deprecated）
+    allowedTools?: string[];      // 後方互換用（deprecated）
     isOrchestrator?: boolean;     // オーケストレーターとして動作
     isBuiltIn?: boolean;          // 組み込みキャラかどうか
     isUser?: boolean;             // ユーザー自身かどうか
     portraitData?: string;        // Base64画像データ（カスタムペルソナ用）
+    // 新しい権限設定
+    permissions?: PersonaPermissions;
+}
+
+// 権限設定の型
+export interface PermissionSetting {
+    mode: 'all' | 'allowlist' | 'none';
+    list?: string[];
+}
+
+export interface PersonaPermissions {
+    skills?: PermissionSetting;
+    tools?: PermissionSetting;
 }
 
 // Chat Message

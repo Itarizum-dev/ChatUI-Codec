@@ -467,7 +467,7 @@ export default function CodecPage() {
                     systemPrompt: currentPersona.systemPrompt,
                     useMcp: useMcp,
                     useThinking: useThinking,
-                    allowedSkills: currentPersona.allowedSkills,
+                    permissions: currentPersona.permissions,
                 }),
                 signal: controller.signal,
             });

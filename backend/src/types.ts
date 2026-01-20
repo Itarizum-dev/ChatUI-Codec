@@ -17,12 +17,25 @@ export interface Persona {
     portraitUrl?: string;
     // オーケストレーション用拡張
     preferredLLM?: string;
-    allowedSkills?: string[];
-    allowedTools?: string[];
+    allowedSkills?: string[]; // 後方互換用（deprecated）
+    allowedTools?: string[];  // 後方互換用（deprecated）
     isOrchestrator?: boolean;
     isBuiltIn?: boolean;
     isUser?: boolean;
     portraitData?: string;
+    // 新しい権限設定
+    permissions?: PersonaPermissions;
+}
+
+// 権限設定の型
+export interface PermissionSetting {
+    mode: 'all' | 'allowlist' | 'none';
+    list?: string[];
+}
+
+export interface PersonaPermissions {
+    skills?: PermissionSetting;
+    tools?: PermissionSetting;
 }
 
 export interface Message {
@@ -56,7 +69,8 @@ export interface ChatRequest {
     useMcp?: boolean;
     useThinking?: boolean; // Ollamaのthinkingモード有効化
     useOrchestrator?: boolean; // オーケストレーターモード有効化
-    allowedSkills?: string[]; // ペルソナに許可されたスキル (空配列=スキルなし, undefined=全許可)
+    allowedSkills?: string[]; // 後方互換用（deprecated）
+    permissions?: PersonaPermissions; // 新しい権限設定
 }
 
 export interface ChatResponse {

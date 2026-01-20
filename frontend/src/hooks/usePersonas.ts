@@ -143,37 +143,44 @@ export function usePersonas(): UsePersonasReturn {
 
     // Construct final persona list
     // Priority: SYSTEM > FileBased (overridden by deleted/prompts/skills) > Custom
-    const personas: Persona[] = [
-        // SYSTEM (Always present, essentially a builtin)
-        {
-            ...SYSTEM_PERSONA,
-            systemPrompt: builtinPrompts[SYSTEM_PERSONA.id] ?? SYSTEM_PERSONA.systemPrompt,
-            allowedSkills: customPersonas.find(p => p.id === `builtin-override-${SYSTEM_PERSONA.id}`)?.allowedSkills,
-        },
+    const personas: Persona[] = (() => {
+        // Get overlay data for SYSTEM persona
+        const systemOverride = customPersonas.find(p => p.id === `builtin-override-${SYSTEM_PERSONA.id}`);
 
-        // File-based personas (treated as builtin)
-        ...filePersonas
-            .filter(p => !deletedBuiltinIds.includes(p.id))
-            .filter(p => p.id !== 'system') // Prevent ID collision if JSON contains system
-            .map(p => {
-                const override = customPersonas.find(cp => cp.id === `builtin-override-${p.id}`);
-                return {
-                    ...p,
-                    isBuiltIn: true, // Force built-in flag for file-loaded personas
-                    systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
-                    allowedSkills: override?.allowedSkills ?? p.allowedSkills,
-                };
+        return [
+            // SYSTEM (Always present, essentially a builtin)
+            {
+                ...SYSTEM_PERSONA,
+                systemPrompt: builtinPrompts[SYSTEM_PERSONA.id] ?? SYSTEM_PERSONA.systemPrompt,
+                allowedSkills: systemOverride?.allowedSkills,
+                permissions: systemOverride?.permissions,
+            },
+
+            // File-based personas (treated as builtin)
+            ...filePersonas
+                .filter(p => !deletedBuiltinIds.includes(p.id))
+                .filter(p => p.id !== 'system') // Prevent ID collision if JSON contains system
+                .map(p => {
+                    const override = customPersonas.find(cp => cp.id === `builtin-override-${p.id}`);
+                    return {
+                        ...p,
+                        isBuiltIn: true, // Force built-in flag for file-loaded personas
+                        systemPrompt: builtinPrompts[p.id] ?? p.systemPrompt,
+                        allowedSkills: override?.allowedSkills ?? p.allowedSkills,
+                        permissions: override?.permissions ?? p.permissions,
+                    };
+                }),
+
+            // Custom personas (localStorage), excluding override entries
+            ...customPersonas.filter(p => {
+                // Exclude builtin override entries (they're for internal use only)
+                if (p.id.startsWith('builtin-override-')) return false;
+                // If filePersonas has a user defined, hide the localStorage one to avoid duplicates
+                if (p.isUser && filePersonas.some(fp => fp.isUser)) return false;
+                return true;
             }),
-
-        // Custom personas (localStorage), excluding override entries
-        ...customPersonas.filter(p => {
-            // Exclude builtin override entries (they're for internal use only)
-            if (p.id.startsWith('builtin-override-')) return false;
-            // If filePersonas has a user defined, hide the localStorage one to avoid duplicates
-            if (p.isUser && filePersonas.some(fp => fp.isUser)) return false;
-            return true;
-        }),
-    ];
+        ];
+    })();
 
     const addPersona = useCallback((personaData: Omit<Persona, 'id' | 'isBuiltIn'>) => {
         const newPersona: Persona = {
@@ -190,21 +197,27 @@ export function usePersonas(): UsePersonasReturn {
         const isFilePersona = filePersonas.some(p => p.id === id);
 
         if (isSystem || isFilePersona) {
-            // Allow updating system prompt and allowedSkills for builtins
-            if (updates.systemPrompt !== undefined || updates.allowedSkills !== undefined) {
+            // Allow updating system prompt, allowedSkills, and permissions for builtins
+            if (updates.systemPrompt !== undefined || updates.allowedSkills !== undefined || updates.permissions !== undefined) {
                 // Save to builtin overrides in localStorage
-                setBuiltinPrompts(prev => ({
-                    ...prev,
-                    [id]: updates.systemPrompt ?? prev[id] ?? '',
-                }));
-                // Save allowedSkills to custom personas storage as overlay
-                if (updates.allowedSkills !== undefined) {
+                if (updates.systemPrompt !== undefined) {
+                    setBuiltinPrompts(prev => ({
+                        ...prev,
+                        [id]: updates.systemPrompt ?? prev[id] ?? '',
+                    }));
+                }
+                // Save permissions/allowedSkills to custom personas storage as overlay
+                if (updates.allowedSkills !== undefined || updates.permissions !== undefined) {
                     setCustomPersonas(prev => {
                         const existing = prev.find(p => p.id === `builtin-override-${id}`);
                         if (existing) {
                             return prev.map(p =>
                                 p.id === `builtin-override-${id}`
-                                    ? { ...p, allowedSkills: updates.allowedSkills }
+                                    ? {
+                                        ...p,
+                                        allowedSkills: updates.allowedSkills ?? p.allowedSkills,
+                                        permissions: updates.permissions ?? p.permissions,
+                                    }
                                     : p
                             );
                         }
@@ -216,6 +229,7 @@ export function usePersonas(): UsePersonasReturn {
                             frequency: '',
                             systemPrompt: '',
                             allowedSkills: updates.allowedSkills,
+                            permissions: updates.permissions,
                             isBuiltIn: false,
                         }];
                     });

@@ -79,6 +79,19 @@ app.get('/api/skills', async (req, res) => {
 });
 
 // ============================================
+// Built-in Tools API Endpoints
+// ============================================
+
+/** ビルトインツール一覧取得 */
+app.get('/api/tools', (req, res) => {
+    const tools = BUILTIN_TOOLS.map(t => ({
+        name: t.name,
+        description: t.description,
+    }));
+    res.json({ tools });
+});
+
+// ============================================
 // MCP API Endpoints
 // ============================================
 
@@ -550,19 +563,27 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     res.write(JSON.stringify({ type: 'ping' }) + '\n');
 
     const body: ChatRequest = req.body;
-    const { message, providerId, context, systemPrompt, useMcp, useThinking, allowedSkills } = body;
+    const { message, providerId, context, systemPrompt, useMcp, useThinking, allowedSkills, permissions } = body;
 
-    // Inject available skills into system prompt (filtered by allowedSkills)
+    // Inject available skills into system prompt (filtered by permissions or allowedSkills)
     let enhancedSystemPrompt = systemPrompt || '';
     let injectedSkills: Array<{ name: string; description: string }> = [];
     try {
         let skills = await skillManager.getAvailableSkills();
 
-        // Filter skills based on allowedSkills
-        // - undefined: all skills allowed (no filtering)
-        // - []: no skills allowed (filter all)
-        // - ['skill1', 'skill2']: only these skills allowed
-        if (allowedSkills !== undefined) {
+        // Filter skills based on permissions.skills (new) or allowedSkills (legacy)
+        if (permissions?.skills) {
+            const { mode, list } = permissions.skills;
+            if (mode === 'none') {
+                console.log('[Skills] permissions.skills.mode=none - no skills will be injected');
+                skills = [];
+            } else if (mode === 'allowlist' && list) {
+                skills = skills.filter(s => list.includes(s.name));
+                console.log(`[Skills] Filtered by permissions.skills.allowlist: ${skills.length}/${list.length} matched`);
+            }
+            // mode === 'all' means no filtering needed
+        } else if (allowedSkills !== undefined) {
+            // 後方互換: allowedSkillsでフィルタリング
             if (allowedSkills.length === 0) {
                 console.log('[Skills] allowedSkills is empty array - no skills will be injected');
                 skills = [];
@@ -655,8 +676,19 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         console.log(`[MCP] ${mcpTools.length} tools available`);
     }
 
-    // Built-in tools are always available (lightweight, no MCP overhead)
-    const builtinTools = BUILTIN_TOOLS;
+    // Built-in tools - filter based on permissions.tools
+    let builtinTools = [...BUILTIN_TOOLS]; // Copy to avoid mutating original
+    if (permissions?.tools) {
+        const { mode, list } = permissions.tools;
+        if (mode === 'none') {
+            console.log('[Builtin] permissions.tools.mode=none - no builtin tools will be available');
+            builtinTools = [];
+        } else if (mode === 'allowlist' && list) {
+            builtinTools = builtinTools.filter(t => list.includes(t.name));
+            console.log(`[Builtin] Filtered by permissions.tools.allowlist: ${builtinTools.length}/${list.length} matched`);
+        }
+        // mode === 'all' means no filtering needed
+    }
     console.log(`[Builtin] ${builtinTools.length} tools available`);
 
     let fullContent = '';

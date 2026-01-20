@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import styles from './PersonaEditorModal.module.css';
-import { Persona } from '@/types';
+import { Persona, PermissionSetting } from '@/types';
 import { processImageFile } from '@/hooks/usePersonas';
 
 // スキル情報の型
@@ -15,6 +15,15 @@ interface SkillSummary {
     description: string;
     path: string;
 }
+
+// ビルトインツール情報の型
+interface ToolInfo {
+    name: string;
+    description: string;
+}
+
+// タブの種類
+type PermissionTab = 'skills' | 'tools';
 
 interface PersonaEditorModalProps {
     isOpen: boolean;
@@ -67,9 +76,19 @@ export default function PersonaEditorModal({
     const [editFrequency, setEditFrequency] = useState('');
     const [editAllowedSkills, setEditAllowedSkills] = useState<string[] | undefined>(undefined);
 
+    // 権限設定（新方式）
+    const [editSkillsMode, setEditSkillsMode] = useState<'all' | 'allowlist' | 'none'>('all');
+    const [editSkillsList, setEditSkillsList] = useState<string[]>([]);
+    const [editToolsMode, setEditToolsMode] = useState<'all' | 'allowlist' | 'none'>('all');
+    const [editToolsList, setEditToolsList] = useState<string[]>([]);
+    const [activePermissionTab, setActivePermissionTab] = useState<PermissionTab>('skills');
+
     // スキル一覧
     const [availableSkills, setAvailableSkills] = useState<SkillSummary[]>([]);
     const [skillsLoading, setSkillsLoading] = useState(false);
+    // ツール一覧
+    const [availableTools, setAvailableTools] = useState<ToolInfo[]>([]);
+    const [toolsLoading, setToolsLoading] = useState(false);
 
     // スキル一覧を取得
     useEffect(() => {
@@ -90,6 +109,27 @@ export default function PersonaEditorModal({
             }
         };
         fetchSkills();
+    }, [isOpen]);
+
+    // ツール一覧を取得
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchTools = async () => {
+            setToolsLoading(true);
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+                const res = await fetch(`${apiUrl}/api/tools`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setAvailableTools(data.tools || []);
+                }
+            } catch (e) {
+                console.warn('[PersonaEditor] Failed to fetch tools:', e);
+            } finally {
+                setToolsLoading(false);
+            }
+        };
+        fetchTools();
     }, [isOpen]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,6 +203,34 @@ export default function PersonaEditorModal({
         setEditCodename(persona.codename);
         setEditFrequency(persona.frequency);
         setEditAllowedSkills(persona.allowedSkills);
+
+        // permissions設定の読み込み（後方互換対応）
+        if (persona.permissions?.skills) {
+            setEditSkillsMode(persona.permissions.skills.mode);
+            setEditSkillsList(persona.permissions.skills.list || []);
+        } else if (persona.allowedSkills !== undefined) {
+            // 後方互換: allowedSkillsからマイグレーション
+            if (persona.allowedSkills.length === 0) {
+                setEditSkillsMode('none');
+                setEditSkillsList([]);
+            } else {
+                setEditSkillsMode('allowlist');
+                setEditSkillsList(persona.allowedSkills);
+            }
+        } else {
+            setEditSkillsMode('all');
+            setEditSkillsList([]);
+        }
+
+        if (persona.permissions?.tools) {
+            setEditToolsMode(persona.permissions.tools.mode);
+            setEditToolsList(persona.permissions.tools.list || []);
+        } else {
+            setEditToolsMode('all');
+            setEditToolsList([]);
+        }
+
+        setActivePermissionTab('skills');
         setError(null);
     };
 
@@ -197,11 +265,23 @@ export default function PersonaEditorModal({
     };
 
     const handleEditSubmit = (persona: Persona) => {
+        // permissions オブジェクトを構築
+        const permissions = {
+            skills: {
+                mode: editSkillsMode,
+                list: editSkillsMode === 'allowlist' ? editSkillsList : undefined,
+            },
+            tools: {
+                mode: editToolsMode,
+                list: editToolsMode === 'allowlist' ? editToolsList : undefined,
+            },
+        };
+
         if (persona.isBuiltIn) {
-            // Update system prompt and skills for builtins
+            // Update system prompt and permissions for builtins
             onUpdate(persona.id, {
                 systemPrompt: editSystemPrompt,
-                allowedSkills: editAllowedSkills,
+                permissions,
             });
         } else if (persona.isUser) {
             // Update profile fields for user
@@ -218,7 +298,7 @@ export default function PersonaEditorModal({
                 frequency: editFrequency.trim() || '142.00',
                 systemPrompt: editSystemPrompt,
                 portraitData: editPortraitData || undefined,
-                allowedSkills: editAllowedSkills,
+                permissions,
             });
         }
         setEditingId(null);
@@ -364,36 +444,158 @@ export default function PersonaEditorModal({
                                             />
                                         )}
 
-                                        {/* Skills Section - Only show for non-user personas */}
+                                        {/* Permissions Section - Tabbed UI */}
                                         {!persona.isUser && (
-                                            <div className={styles.skillsSection}>
-                                                <div className={styles.skillsHeader}>
-                                                    <span className={styles.skillsTitle}>ALLOWED SKILLS</span>
-                                                    <span className={styles.skillsCount}>
-                                                        {getEnabledSkillCount()}/{availableSkills.length}
-                                                    </span>
+                                            <div className={styles.permissionsSection}>
+                                                {/* Tab Headers */}
+                                                <div className={styles.permissionTabs}>
+                                                    <button
+                                                        className={`${styles.permissionTab} ${activePermissionTab === 'skills' ? styles.active : ''}`}
+                                                        onClick={() => setActivePermissionTab('skills')}
+                                                    >
+                                                        SKILLS
+                                                    </button>
+                                                    <button
+                                                        className={`${styles.permissionTab} ${activePermissionTab === 'tools' ? styles.active : ''}`}
+                                                        onClick={() => setActivePermissionTab('tools')}
+                                                    >
+                                                        TOOLS
+                                                    </button>
                                                 </div>
-                                                {skillsLoading ? (
-                                                    <div className={styles.skillsLoading}>Loading skills...</div>
-                                                ) : availableSkills.length === 0 ? (
-                                                    <div className={styles.skillsEmpty}>No skills available</div>
-                                                ) : (
-                                                    <div className={styles.skillsList}>
-                                                        {availableSkills.map(skill => (
-                                                            <div
-                                                                key={skill.name}
-                                                                className={`${styles.skillItem} ${isSkillEnabled(skill.name) ? styles.enabled : ''}`}
-                                                                onClick={() => toggleSkill(skill.name)}
-                                                            >
+
+                                                {/* Skills Tab Content */}
+                                                {activePermissionTab === 'skills' && (
+                                                    <div className={styles.permissionContent}>
+                                                        <div className={styles.modeSelector}>
+                                                            <label>
                                                                 <input
-                                                                    type="checkbox"
-                                                                    className={styles.skillCheckbox}
-                                                                    checked={isSkillEnabled(skill.name)}
-                                                                    onChange={() => { }}
+                                                                    type="radio"
+                                                                    name="skillsMode"
+                                                                    checked={editSkillsMode === 'all'}
+                                                                    onChange={() => setEditSkillsMode('all')}
                                                                 />
-                                                                <span className={styles.skillName}>{skill.name}</span>
-                                                            </div>
-                                                        ))}
+                                                                All
+                                                            </label>
+                                                            <label>
+                                                                <input
+                                                                    type="radio"
+                                                                    name="skillsMode"
+                                                                    checked={editSkillsMode === 'allowlist'}
+                                                                    onChange={() => setEditSkillsMode('allowlist')}
+                                                                />
+                                                                Select
+                                                            </label>
+                                                            <label>
+                                                                <input
+                                                                    type="radio"
+                                                                    name="skillsMode"
+                                                                    checked={editSkillsMode === 'none'}
+                                                                    onChange={() => setEditSkillsMode('none')}
+                                                                />
+                                                                None
+                                                            </label>
+                                                            <span className={styles.itemCount}>
+                                                                {editSkillsMode === 'all' ? availableSkills.length :
+                                                                    editSkillsMode === 'none' ? 0 : editSkillsList.length}/{availableSkills.length}
+                                                            </span>
+                                                        </div>
+                                                        {editSkillsMode === 'allowlist' && (
+                                                            skillsLoading ? (
+                                                                <div className={styles.skillsLoading}>Loading...</div>
+                                                            ) : (
+                                                                <div className={styles.skillsList}>
+                                                                    {availableSkills.map(skill => (
+                                                                        <div
+                                                                            key={skill.name}
+                                                                            className={`${styles.skillItem} ${editSkillsList.includes(skill.name) ? styles.enabled : ''}`}
+                                                                            onClick={() => {
+                                                                                setEditSkillsList(prev =>
+                                                                                    prev.includes(skill.name)
+                                                                                        ? prev.filter(n => n !== skill.name)
+                                                                                        : [...prev, skill.name]
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                className={styles.skillCheckbox}
+                                                                                checked={editSkillsList.includes(skill.name)}
+                                                                                onChange={() => { }}
+                                                                            />
+                                                                            <span className={styles.skillName}>{skill.name}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Tools Tab Content */}
+                                                {activePermissionTab === 'tools' && (
+                                                    <div className={styles.permissionContent}>
+                                                        <div className={styles.modeSelector}>
+                                                            <label>
+                                                                <input
+                                                                    type="radio"
+                                                                    name="toolsMode"
+                                                                    checked={editToolsMode === 'all'}
+                                                                    onChange={() => setEditToolsMode('all')}
+                                                                />
+                                                                All
+                                                            </label>
+                                                            <label>
+                                                                <input
+                                                                    type="radio"
+                                                                    name="toolsMode"
+                                                                    checked={editToolsMode === 'allowlist'}
+                                                                    onChange={() => setEditToolsMode('allowlist')}
+                                                                />
+                                                                Select
+                                                            </label>
+                                                            <label>
+                                                                <input
+                                                                    type="radio"
+                                                                    name="toolsMode"
+                                                                    checked={editToolsMode === 'none'}
+                                                                    onChange={() => setEditToolsMode('none')}
+                                                                />
+                                                                None
+                                                            </label>
+                                                            <span className={styles.itemCount}>
+                                                                {editToolsMode === 'all' ? availableTools.length :
+                                                                    editToolsMode === 'none' ? 0 : editToolsList.length}/{availableTools.length}
+                                                            </span>
+                                                        </div>
+                                                        {editToolsMode === 'allowlist' && (
+                                                            toolsLoading ? (
+                                                                <div className={styles.skillsLoading}>Loading...</div>
+                                                            ) : (
+                                                                <div className={styles.skillsList}>
+                                                                    {availableTools.map(tool => (
+                                                                        <div
+                                                                            key={tool.name}
+                                                                            className={`${styles.skillItem} ${editToolsList.includes(tool.name) ? styles.enabled : ''}`}
+                                                                            onClick={() => {
+                                                                                setEditToolsList(prev =>
+                                                                                    prev.includes(tool.name)
+                                                                                        ? prev.filter(n => n !== tool.name)
+                                                                                        : [...prev, tool.name]
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                className={styles.skillCheckbox}
+                                                                                checked={editToolsList.includes(tool.name)}
+                                                                                onChange={() => { }}
+                                                                            />
+                                                                            <span className={styles.skillName}>{tool.name}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
