@@ -516,7 +516,8 @@ export default function CodecPage() {
                             continue;
                         }
                         if (json.warning) {
-                            console.warn('MCP Warning:', json.warning);
+                            // Note: warnings are now sent with metadata, this is just for logging
+                            console.warn('Warning received:', json.warning);
                             continue;
                         }
 
@@ -553,12 +554,20 @@ export default function CodecPage() {
                         }
 
                         if (json.metadata) {
+                            // Process warnings if any (from Ollama tool/thinking unsupported)
+                            let warningPrefix = '';
+                            if (json.warnings && Array.isArray(json.warnings) && json.warnings.length > 0) {
+                                warningPrefix = json.warnings.map((w: string) => `> ${w}`).join('\n') + '\n\n';
+                            }
+
                             setMessages((prev) =>
                                 prev.map((msg) =>
                                     msg.id === assistantMessageId
                                         ? {
                                             ...msg,
                                             metadata: json.metadata,
+                                            // Prepend warnings to content ONLY if there are warnings
+                                            ...(warningPrefix ? { content: warningPrefix + (msg.content || '') } : {}),
                                             // Store debug payload if available
                                             debugPayload: json.debugPayload || msg.debugPayload
                                         }

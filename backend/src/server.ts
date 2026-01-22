@@ -694,14 +694,17 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     let fullContent = '';
     let promptTokens = 0;
     let completionTokens = 0;
+    let warnings: string[] = []; // 警告を収集
 
     try {
         if (provider.type === 'ollama') {
-            fullContent = await handleOllamaChat(
+            const result = await handleOllamaChat(
                 provider, enhancedSystemPrompt, context, message, mcpTools, builtinTools, res,
                 (p, c) => { promptTokens = p; completionTokens = c; },
                 useThinking || false
             );
+            fullContent = result.content;
+            warnings = result.warnings;
 
         } else if (provider.type === 'anthropic') {
             fullContent = await handleAnthropicChat(
@@ -722,7 +725,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             );
         }
 
-        // Send metadata as final chunk (with debug payload)
+        // Send metadata as final chunk (with debug payload and warnings)
         const metadata: MessageMetadata = {
             model: provider.model,
             tokens: {
@@ -749,7 +752,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             },
         };
 
-        res.write(JSON.stringify({ metadata, debugPayload }) + '\n');
+        // Include warnings in response if any
+        res.write(JSON.stringify({ metadata, debugPayload, warnings: warnings.length > 0 ? warnings : undefined }) + '\n');
         res.end();
 
     } catch (error) {
@@ -1291,7 +1295,7 @@ async function handleOllamaChat(
     res: Response,
     setTokens: (prompt: number, completion: number) => void,
     useThinking: boolean = false
-): Promise<string> {
+): Promise<{ content: string; warnings: string[] }> {
     const formattedContext = formatContext(context);
 
     let messages: Array<{ role: string; content: string; tool_calls?: unknown[] }> = [
@@ -1316,6 +1320,7 @@ async function handleOllamaChat(
 
     let fullContent = '';
     let fullThinking = '';
+    const warnings: string[] = []; // 警告を収集
     const MAX_TOOL_ITERATIONS = 10;
 
     // Combine MCP tools and built-in tools for LLM
@@ -1358,17 +1363,54 @@ async function handleOllamaChat(
                 signal: controller.signal,
             });
 
-            // Retry logic for models that don't support tools (Ollama returns 400)
-            if (!response.ok && response.status === 400 && requestBody.tools) {
-                console.warn(`[Ollama] Request failed (400) with tools. Retrying without tools for model ${provider.model}...`);
-                delete requestBody.tools;
-                response = await fetch(`${provider.endpoint}/api/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody),
-                    signal: controller.signal,
-                });
+            // Helper function to handle 400 errors
+            async function handle400Error(resp: globalThis.Response): Promise<globalThis.Response> {
+                if (!resp.ok && resp.status === 400) {
+                    const errText = await resp.text();
+                    let errorMessage = errText;
+                    try {
+                        const errJson = JSON.parse(errText);
+                        errorMessage = errJson.error || errText;
+                    } catch (e) {
+                        // Not JSON
+                    }
+
+                    const lowerError = errorMessage.toLowerCase();
+                    console.log(`[Ollama] 400 Error: ${errorMessage}`);
+
+                    // Check if it's a thinking-related error (must contain "think" specifically)
+                    if (requestBody.think === true && lowerError.includes('think')) {
+                        console.warn(`[Ollama] Request failed (400) with thinking. Retrying without thinking for model ${provider.model}...`);
+                        const warnMsg = `⚠️ Model "${provider.model}" does not support thinking mode.`;
+                        if (!warnings.includes(warnMsg)) warnings.push(warnMsg);
+                        requestBody.think = false;
+                        return fetch(`${provider.endpoint}/api/chat`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestBody),
+                            signal: controller.signal,
+                        });
+                    }
+                    // Check if it's a tools-related error
+                    else if (requestBody.tools && lowerError.includes('tool')) {
+                        console.warn(`[Ollama] Request failed (400) with tools. Retrying without tools for model ${provider.model}...`);
+                        const warnMsg = `⚠️ Model "${provider.model}" does not support tools.`;
+                        if (!warnings.includes(warnMsg)) warnings.push(warnMsg);
+                        delete requestBody.tools;
+                        return fetch(`${provider.endpoint}/api/chat`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestBody),
+                            signal: controller.signal,
+                        });
+                    }
+                }
+                return resp;
             }
+
+            // Apply retry logic up to 2 times for cascading errors
+            response = await handle400Error(response);
+            response = await handle400Error(response);
 
             clearTimeout(timeoutId);
             console.log(`[Ollama] Response status: ${response.status}`);
@@ -1462,9 +1504,8 @@ async function handleOllamaChat(
 
                 // Check for unsupported model (thinking mode ON but no thinking received)
                 if (useThinking && !receivedAnyThinking && fullContent) {
-                    res.write(JSON.stringify({
-                        thinkingError: 'このモデルはThinkingモードに対応していません。対応モデル: qwen3, deepseek-r1, phi4-reasoning 等'
-                    }) + '\n');
+                    const warnMsg = `⚠️ Model "${provider.model}" does not support thinking mode.`;
+                    if (!warnings.includes(warnMsg)) warnings.push(warnMsg);
                 }
 
                 // Send thinkingDone signal if we received any thinking
@@ -1529,7 +1570,7 @@ async function handleOllamaChat(
                     continue;
                 }
 
-                return fullContent;
+                return { content: fullContent, warnings };
             } else {
                 throw new Error('No response body from Ollama API');
             }
@@ -1539,7 +1580,7 @@ async function handleOllamaChat(
         }
     }
 
-    return fullContent;
+    return { content: fullContent, warnings };
 }
 
 // ============================================

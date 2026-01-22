@@ -1,6 +1,15 @@
 # CODEC Version History
 
+## [v1.10.1] - 2026-01-22
+- **Fix**: Ollama Thinkingモード400エラーの自動リトライを実装
+  - Thinkingモード非対応モデルでエラー発生時、自動的に `think: false` でリトライ
+  - Tools非対応モデルでのエラーも同様に自動リトライ
+  - カスケードエラー対応: Thinking→Toolsの順で両方のリトライを連続実行
+  - 警告メッセージをUI上部に表示（黄色の⚠️アイコン付き）
+  - 対象外モデルでも致命的エラーにならず、正常にレスポンスを生成
+
 ## [v1.10.0] - 2026-01-21
+
 - **Feature**: Persona Permissions - SkillsとToolsの細粒度権限設定
   - ペルソナエディタにタブ式UI（SKILLS/TOOLS）を追加
   - 3つのモード：All（全許可）/ Select（個別選択）/ None（全禁止）
