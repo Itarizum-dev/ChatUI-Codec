@@ -64,15 +64,19 @@ export const DEFAULT_PERSONA = SYSTEM_PERSONA_FALLBACK;
 export const DEFAULT_LLM = FALLBACK_PROVIDERS[0];
 
 // Backend URL for API access
-// - Local dev (localhost:3000): Direct access to localhost:3001 for streaming
-// - Docker/ngrok (other hosts): Relative path through Next.js rewrites
+// - Local dev (localhost:3000 → localhost:3001): Direct access for faster dev
+// - Docker/ngrok: Uses Next.js Route Handler (/api/chat) which properly handles SSE streaming
 export const getBackendUrl = (): string => {
     if (typeof window === 'undefined') return ''; // SSR: use relative path
     const host = window.location.hostname;
+    // Local development: direct backend access for simplicity
+    // Note: For ngrok testing, comment out these lines to use Route Handler
     if (host === 'localhost' || host === '127.0.0.1') {
-        return 'http://localhost:3001'; // Direct access for streaming
+        return 'http://localhost:3001';
     }
-    return ''; // Use Next.js rewrites for Docker/ngrok
+    // All other environments (Docker, ngrok): Use Next.js Route Handler
+    // The Route Handler properly forwards SSE streams without buffering
+    return '';
 };
 
 // Legacy: For backwards compatibility (use getBackendUrl() instead)

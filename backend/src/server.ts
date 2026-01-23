@@ -558,6 +558,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering for ngrok/nginx
 
     // Send immediate ping to confirm connection
     res.write(JSON.stringify({ type: 'ping' }) + '\n');

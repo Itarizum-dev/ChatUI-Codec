@@ -1,5 +1,12 @@
 # CODEC Version History
 
+## [v1.10.2] - 2026-01-24
+- **Fix**: ngrok経由でのSSEストリーミングが機能しない問題を修正
+  - Next.js Route Handlerを実装し、SSEストリームを適切に転送
+  - `X-Accel-Buffering: no` ヘッダーをバックエンドに追加
+  - `INTERNAL_API_URL`をdocker-compose.ymlのランタイム環境変数に追加
+  - バックエンドをngrokで公開せずにセキュリティを維持
+
 ## [v1.10.1] - 2026-01-22
 - **Fix**: Ollama Thinkingモード400エラーの自動リトライを実装
   - Thinkingモード非対応モデルでエラー発生時、自動的に `think: false` でリトライ

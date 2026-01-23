@@ -25,6 +25,8 @@ services:
         - INTERNAL_API_URL=http://backend:3001
     ports:
       - "3000:3000"
+    environment:
+      - INTERNAL_API_URL=http://backend:3001 # Runtime env for Route Handlers
     depends_on:
       - backend
     restart: unless-stopped
