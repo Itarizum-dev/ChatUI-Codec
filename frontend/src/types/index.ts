@@ -89,7 +89,7 @@ export interface DebugPayload {
         };
         latencyMs?: number;
         model?: string;
-        toolCalls?: Array<{ name: string; success: boolean }>;
+        toolCalls?: Array<{ name: string; success: boolean; input?: Record<string, unknown>; output?: string }>;
         injectedSkills?: Array<{ name: string; description: string }>;
     };
 }

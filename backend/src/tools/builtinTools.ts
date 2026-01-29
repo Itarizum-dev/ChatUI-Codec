@@ -305,6 +305,9 @@ const geminiAskTool: BuiltinTool = {
 
             const result = stdout.trim();
             console.log(`[gemini_ask] Response length: ${result.length} chars`);
+            console.log(`[gemini_ask] ===== Full Response =====`);
+            console.log(result);
+            console.log(`[gemini_ask] ===== End Response =====`);
             return result;
         } catch (e: any) {
             console.error(`[gemini_ask] Error:`, e.message);

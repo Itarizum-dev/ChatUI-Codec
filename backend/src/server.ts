@@ -696,6 +696,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     let promptTokens = 0;
     let completionTokens = 0;
     let warnings: string[] = []; // 警告を収集
+    let toolCallsLog: Array<{ name: string; success: boolean; input?: Record<string, unknown>; output?: string }> = []; // ツール実行ログ
 
     try {
         if (provider.type === 'ollama') {
@@ -706,6 +707,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             );
             fullContent = result.content;
             warnings = result.warnings;
+            toolCallsLog = result.toolCalls;
 
         } else if (provider.type === 'anthropic') {
             fullContent = await handleAnthropicChat(
@@ -750,6 +752,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             meta: {
                 ...metadata,
                 injectedSkills,
+                toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
             },
         };
 
@@ -1296,7 +1299,7 @@ async function handleOllamaChat(
     res: Response,
     setTokens: (prompt: number, completion: number) => void,
     useThinking: boolean = false
-): Promise<{ content: string; warnings: string[] }> {
+): Promise<{ content: string; warnings: string[]; toolCalls: Array<{ name: string; success: boolean; input?: Record<string, unknown>; output?: string }> }> {
     const formattedContext = formatContext(context);
 
     let messages: Array<{ role: string; content: string; tool_calls?: unknown[] }> = [
@@ -1437,6 +1440,7 @@ async function handleOllamaChat(
                 let pendingToolCalls: Array<{ function: { name: string; arguments: Record<string, unknown> } }> = [];
                 let lastMessageContent = '';
                 let receivedAnyThinking = false;
+                const toolExecutions: Array<{ name: string; success: boolean; input?: Record<string, unknown>; output?: string }> = [];
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1563,6 +1567,14 @@ async function handleOllamaChat(
                             content: resultText,
                         } as any);
 
+                        // Record tool execution for debug payload
+                        toolExecutions.push({
+                            name: sanitizedToolName,
+                            success: !resultText.startsWith('Error:'),
+                            input: fc.arguments as Record<string, unknown>,
+                            output: resultText,
+                        });
+
                         res.write(JSON.stringify({ toolResult: { name: fc.name, result: resultText.slice(0, 200) } }) + '\n');
                     }
 
@@ -1571,7 +1583,7 @@ async function handleOllamaChat(
                     continue;
                 }
 
-                return { content: fullContent, warnings };
+                return { content: fullContent, warnings, toolCalls: toolExecutions };
             } else {
                 throw new Error('No response body from Ollama API');
             }
@@ -1581,7 +1593,7 @@ async function handleOllamaChat(
         }
     }
 
-    return { content: fullContent, warnings };
+    return { content: fullContent, warnings, toolCalls: [] };
 }
 
 // ============================================

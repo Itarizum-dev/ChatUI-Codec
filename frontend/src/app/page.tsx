@@ -1158,6 +1158,32 @@ export default function CodecPage() {
                                                                 {JSON.stringify(msg.debugPayload.meta, null, 2)}
                                                             </pre>
                                                         </details>
+                                                        {msg.debugPayload.meta.toolCalls && msg.debugPayload.meta.toolCalls.length > 0 && (
+                                                            <details className={styles.debugSection}>
+                                                                <summary>🔧 TOOL RESULTS ({msg.debugPayload.meta.toolCalls.length})</summary>
+                                                                <div className={styles.debugCode}>
+                                                                    {msg.debugPayload.meta.toolCalls.map((tc: { name: string; success: boolean; input?: Record<string, unknown>; output?: string }, i: number) => (
+                                                                        <div key={i} style={{ marginBottom: '12px', borderBottom: '1px dashed var(--codec-green-dim)', paddingBottom: '8px' }}>
+                                                                            <div style={{ fontWeight: 'bold', color: tc.success ? 'var(--codec-green-bright)' : '#ff6b6b' }}>
+                                                                                {tc.success ? '✓' : '✗'} {tc.name}
+                                                                            </div>
+                                                                            <details style={{ marginTop: '4px' }}>
+                                                                                <summary style={{ cursor: 'pointer', fontSize: '0.85rem' }}>Input</summary>
+                                                                                <pre style={{ fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                                                                    {JSON.stringify(tc.input, null, 2)}
+                                                                                </pre>
+                                                                            </details>
+                                                                            <details style={{ marginTop: '4px' }}>
+                                                                                <summary style={{ cursor: 'pointer', fontSize: '0.85rem' }}>Output ({tc.output?.length || 0} chars)</summary>
+                                                                                <pre style={{ fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: '300px', overflowY: 'auto' }}>
+                                                                                    {tc.output}
+                                                                                </pre>
+                                                                            </details>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </details>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
