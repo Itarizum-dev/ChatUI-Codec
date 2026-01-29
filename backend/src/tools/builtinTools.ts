@@ -4,8 +4,12 @@
  */
 
 import fs from 'fs/promises';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 import { SkillCreator } from '../skills/skillCreator';
+
+const execAsync = promisify(exec);
 
 export interface BuiltinTool {
     name: string;
@@ -248,6 +252,67 @@ const cpTool: BuiltinTool = {
     }
 };
 
+/**
+ * gemini_ask - Ask Gemini CLI
+ */
+const geminiAskTool: BuiltinTool = {
+    name: 'gemini_ask',
+    description: 'Ask a question to Google Gemini via CLI. Use when you need Gemini\'s perspective, knowledge, or analysis.',
+    parameters: {
+        type: 'object',
+        properties: {
+            prompt: {
+                type: 'string',
+                description: 'The prompt/question to ask Gemini'
+            },
+            model: {
+                type: 'string',
+                description: 'Optional: Gemini model to use (e.g., gemini-2.5-flash). Defaults to CLI default.'
+            }
+        },
+        required: ['prompt']
+    },
+    execute: async (args) => {
+        const prompt = args.prompt as string;
+        const model = args.model as string | undefined;
+
+        if (!prompt) {
+            return 'Error: prompt is required';
+        }
+
+        try {
+            // Escape double quotes in the prompt
+            const escapedPrompt = prompt.replace(/"/g, '\\"');
+
+            // Build command
+            let cmd = `gemini -p "${escapedPrompt}"`;
+            if (model) {
+                cmd += ` -m ${model}`;
+            }
+
+            console.log(`[gemini_ask] Executing: ${cmd.substring(0, 100)}...`);
+
+            const { stdout, stderr } = await execAsync(cmd, {
+                timeout: 120000, // 2 minute timeout
+                maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+                env: { ...process.env, NO_COLOR: '1' } // Disable color codes
+            });
+
+            if (stderr && !stdout) {
+                console.log(`[gemini_ask] stderr: ${stderr}`);
+                return `Gemini CLI error: ${stderr}`;
+            }
+
+            const result = stdout.trim();
+            console.log(`[gemini_ask] Response length: ${result.length} chars`);
+            return result;
+        } catch (e: any) {
+            console.error(`[gemini_ask] Error:`, e.message);
+            return `Error calling Gemini CLI: ${e.message}`;
+        }
+    }
+};
+
 // Mutable array to hold tools
 export const BUILTIN_TOOLS: BuiltinTool[] = [
     catTool,
@@ -257,7 +322,8 @@ export const BUILTIN_TOOLS: BuiltinTool[] = [
     mkdirTool,
     statTool,
     existsTool,
-    cpTool
+    cpTool,
+    geminiAskTool
 ];
 
 // Helper: Find a built-in tool by name
