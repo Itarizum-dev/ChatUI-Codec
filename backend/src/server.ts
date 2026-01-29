@@ -1325,6 +1325,7 @@ async function handleOllamaChat(
     let fullContent = '';
     let fullThinking = '';
     const warnings: string[] = []; // 警告を収集
+    const toolExecutions: Array<{ name: string; success: boolean; input?: Record<string, unknown>; output?: string }> = []; // ツール実行ログ
     const MAX_TOOL_ITERATIONS = 10;
 
     // Combine MCP tools and built-in tools for LLM
@@ -1440,7 +1441,6 @@ async function handleOllamaChat(
                 let pendingToolCalls: Array<{ function: { name: string; arguments: Record<string, unknown> } }> = [];
                 let lastMessageContent = '';
                 let receivedAnyThinking = false;
-                const toolExecutions: Array<{ name: string; success: boolean; input?: Record<string, unknown>; output?: string }> = [];
 
                 while (true) {
                     const { done, value } = await reader.read();
