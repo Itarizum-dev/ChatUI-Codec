@@ -1,5 +1,13 @@
 # CODEC Version History
 
+## [v1.11.0] - 2026-01-29
+- **Feature**: `gemini_ask` ビルトインツールを追加
+  - Gemini CLIを呼び出してGemini LLMに問い合わせるツール
+  - ペルソナ設定でこのツールを有効にすると、AIがGeminiに質問可能
+  - オプションでモデル指定可能（`-m gemini-2.5-flash`等）
+- **Docker**: バックエンドDockerfileに`@google/gemini-cli`のインストールを追加
+- **Config**: `.env.example`に`GEMINI_API_KEY`の設定を追加
+
 ## [v1.10.2] - 2026-01-24
 - **Fix**: ngrok経由でのSSEストリーミングが機能しない問題を修正
   - Next.js Route Handlerを実装し、SSEストリームを適切に転送
