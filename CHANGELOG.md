@@ -5,6 +5,9 @@
   - Gemini CLIを呼び出してGemini LLMに問い合わせるツール
   - ペルソナ設定でこのツールを有効にすると、AIがGeminiに質問可能
   - オプションでモデル指定可能（`-m gemini-2.5-flash`等）
+- **Feature**: DEBUGパネルにツール実行結果表示機能を追加
+  - ツールの入力(Input)と出力(Output)を折りたたみ式で表示
+  - 成功/失敗のステータスを視覚的に表示（✓/✗）
 - **Docker**: バックエンドDockerfileに`@google/gemini-cli`のインストールを追加
 - **Config**: `.env.example`に`GEMINI_API_KEY`の設定を追加
 
