@@ -15,8 +15,10 @@ ENV NODE_ENV=production
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/package*.json ./
 
-# Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+# Install production dependencies and gemini-cli globally
+RUN npm ci --only=production && \
+    npm install -g @google/gemini-cli && \
+    npm cache clean --force
 
 # Data directories (mounted via docker-compose volumes)
 # Ensure logs and data dir are writable by node user
